@@ -1,9 +1,25 @@
+// ============================================================================
+// MINERVA BASE ENGINE
+// FIXED VERSION
+// - Fixed menu navigation
+// - Fixed EXIT rendering
+// - Fixed movement
+// - Fixed wall scaling bug
+// - Restored floor/ceiling rendering
+// - Proper map loading
+// - Proper wall texture tiling
+// ============================================================================
+
+use fontdue::Font;
 use glam::Vec2;
+use image::GenericImageView;
 use pixels::{Pixels, SurfaceTexture};
+use serde::Deserialize;
 use std::collections::HashSet;
 use std::f32::consts::PI;
 use std::fs;
 use std::sync::Arc;
+
 use winit::{
     dpi::LogicalSize,
     event::{
@@ -18,20 +34,102 @@ use winit::{
     window::WindowBuilder,
 };
 
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
 const WIDTH: u32 = 640;
 const HEIGHT: u32 = 480;
-
-const ROOM_SIZE: f32 = 512.0;
-const TEXTURE_SIZE: usize = 64;
 
 const FOV: f32 = PI / 3.0;
 
 const WALK_SPEED: f32 = 3.0;
 const RUN_MULTIPLIER: f32 = 2.0;
 
-const MOUSE_SENSITIVITY: f32 = 0.003;
+const TEXTURE_SIZE: usize = 64;
 
-const PLAYER_RADIUS: f32 = 12.0;
+const MOUSE_SENSITIVITY_X: f32 = 0.003;
+const MOUSE_SENSITIVITY_Y: f32 = 0.3;
+
+const MAX_PITCH: f32 = 120.0;
+
+// ============================================================================
+// CONFIG
+// ============================================================================
+
+#[derive(Debug, Deserialize)]
+struct GameConfig {
+    menu: MenuConfig,
+    episode: Vec<EpisodeConfig>,
+}
+
+#[derive(Debug, Deserialize)]
+struct MenuConfig {
+    font: String,
+    background: String,
+    exit_message: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct EpisodeConfig {
+    title: String,
+    maps: Vec<MapConfig>,
+}
+
+#[derive(Debug, Deserialize)]
+struct MapConfig {
+    title: String,
+    file: String,
+}
+
+// ============================================================================
+// GAME STATES
+// ============================================================================
+
+#[derive(Clone, Copy, PartialEq)]
+enum GameState {
+    MainMenu,
+    EpisodeMenu,
+    Playing,
+    Paused,
+}
+
+// ============================================================================
+// PLAYER
+// ============================================================================
+
+struct Player {
+    position: Vec2,
+    angle: f32,
+    pitch: f32,
+}
+
+// ============================================================================
+// WALL
+// ============================================================================
+
+#[derive(Clone)]
+struct Wall {
+    start: Vec2,
+    end: Vec2,
+    texture: String,
+}
+
+// ============================================================================
+// MAP
+// ============================================================================
+
+struct Map {
+    walls: Vec<Wall>,
+    floor_texture: String,
+    ceiling_texture: String,
+    spawn: Vec2,
+    spawn_angle: f32,
+}
+
+// ============================================================================
+// TEXTURE
+// ============================================================================
 
 struct Texture {
     width: usize,
@@ -40,7 +138,9 @@ struct Texture {
 }
 
 impl Texture {
+
     fn load(path: &str) -> Self {
+
         let img = image::open(path)
             .expect("failed to load texture")
             .to_rgba8();
@@ -54,11 +154,17 @@ impl Texture {
         }
     }
 
-    fn sample(&self, x: usize, y: usize) -> [u8; 4] {
+    fn sample(
+        &self,
+        x: usize,
+        y: usize,
+    ) -> [u8; 4] {
+
         let tx = x % self.width;
         let ty = y % self.height;
 
-        let idx = (ty * self.width + tx) * 4;
+        let idx =
+            (ty * self.width + tx) * 4;
 
         [
             self.data[idx],
@@ -69,33 +175,63 @@ impl Texture {
     }
 }
 
-struct Player {
-    position: Vec2,
-    angle: f32,
-    pitch: f32,
-}
+// ============================================================================
+// KEY BINDINGS
+// ============================================================================
 
 struct KeyBindings {
+
     forward: KeyCode,
     backward: KeyCode,
+
     left: KeyCode,
     right: KeyCode,
+
     run: KeyCode,
+
+    menu: KeyCode,
+
+    up: KeyCode,
+    down: KeyCode,
+
+    select: KeyCode,
 }
 
 impl KeyBindings {
+
     fn load(path: &str) -> Self {
+
         let content =
             fs::read_to_string(path)
-                .expect("failed to read keyboard config");
+                .expect("failed to read keyboard.txt");
 
-        let mut forward = KeyCode::KeyW;
-        let mut backward = KeyCode::KeyS;
-        let mut left = KeyCode::KeyA;
-        let mut right = KeyCode::KeyD;
-        let mut run = KeyCode::ShiftLeft;
+        let mut bindings = Self {
+
+            forward: KeyCode::KeyW,
+            backward: KeyCode::KeyS,
+
+            left: KeyCode::KeyA,
+            right: KeyCode::KeyD,
+
+            run: KeyCode::ShiftLeft,
+
+            menu: KeyCode::Escape,
+
+            up: KeyCode::ArrowUp,
+            down: KeyCode::ArrowDown,
+
+            select: KeyCode::Enter,
+        };
 
         for line in content.lines() {
+
+            let line = line.trim();
+
+                if line.is_empty()
+                || line.starts_with("#")
+                {
+                    continue;
+                }
 
             let parts: Vec<&str> =
                 line.split('=').collect();
@@ -105,47 +241,344 @@ impl KeyBindings {
             }
 
             let key = parts[0].trim();
-            let value = parts[1].trim();
 
-            let parsed = match value {
-                "W" => KeyCode::KeyW,
-                "S" => KeyCode::KeyS,
-                "A" => KeyCode::KeyA,
-                "D" => KeyCode::KeyD,
-                "SHIFT" => KeyCode::ShiftLeft,
-                _ => continue,
-            };
+            let value =
+                parts[1].trim();
+
+            let parsed =
+                parse_keycode(value);
 
             match key {
-                "forward" => forward = parsed,
-                "backward" => backward = parsed,
-                "left" => left = parsed,
-                "right" => right = parsed,
-                "run" => run = parsed,
+
+                "forward" =>
+                    bindings.forward = parsed,
+
+                "backward" =>
+                    bindings.backward = parsed,
+
+                "left" =>
+                    bindings.left = parsed,
+
+                "right" =>
+                    bindings.right = parsed,
+
+                "run" =>
+                    bindings.run = parsed,
+
+                "menu" =>
+                    bindings.menu = parsed,
+
+                "up" =>
+                    bindings.up = parsed,
+
+                "down" =>
+                    bindings.down = parsed,
+
+                "select" =>
+                    bindings.select = parsed,
+
                 _ => {}
             }
         }
 
-        Self {
-            forward,
-            backward,
-            left,
-            right,
-            run,
-        }
+        bindings
     }
 }
 
+// ============================================================================
+// KEY PARSER
+// ============================================================================
+
+fn parse_keycode(name: &str) -> KeyCode {
+
+    match name.to_lowercase().as_str() {
+
+        "w" => KeyCode::KeyW,
+        "a" => KeyCode::KeyA,
+        "s" => KeyCode::KeyS,
+        "d" => KeyCode::KeyD,
+
+        "shift" =>
+            KeyCode::ShiftLeft,
+
+        "esc" =>
+            KeyCode::Escape,
+
+        "up" =>
+            KeyCode::ArrowUp,
+
+        "down" =>
+            KeyCode::ArrowDown,
+
+        "enter" =>
+            KeyCode::Enter,
+
+        _ =>
+            KeyCode::Space,
+    }
+}
+
+// ============================================================================
+// MAP LOADER
+// ============================================================================
+
+fn load_map(path: &str) -> Map {
+
+    let content =
+        fs::read_to_string(path)
+            .expect("failed to load map");
+
+    let mut walls = Vec::new();
+
+    let mut floor_texture =
+        "textureD".to_string();
+
+    let mut ceiling_texture =
+        "textureU".to_string();
+
+    let mut spawn =
+        Vec2::new(256.0, 256.0);
+
+    let mut spawn_angle = 0.0;
+
+    for line in content.lines() {
+
+        let line = line.trim();
+
+        if line.is_empty() {
+            continue;
+        }
+
+        let parts: Vec<&str> =
+            line.split_whitespace()
+                .collect();
+
+        if parts.is_empty() {
+            continue;
+        }
+
+        match parts[0] {
+
+            "floor" => {
+                floor_texture =
+                    parts[1].to_string();
+            }
+
+            "ceiling" => {
+                ceiling_texture =
+                    parts[1].to_string();
+            }
+
+            "wall" => {
+
+                let x1: f32 =
+                    parts[1].parse().unwrap();
+
+                let y1: f32 =
+                    parts[2].parse().unwrap();
+
+                let x2: f32 =
+                    parts[3].parse().unwrap();
+
+                let y2: f32 =
+                    parts[4].parse().unwrap();
+
+                walls.push(
+                    Wall {
+                        start:
+                            Vec2::new(x1, y1),
+
+                        end:
+                            Vec2::new(x2, y2),
+
+                        texture:
+                            parts[5].to_string(),
+                    }
+                );
+            }
+
+            "spawn" => {
+
+                spawn.x =
+                    parts[1].parse().unwrap();
+
+                spawn.y =
+                    parts[2].parse().unwrap();
+
+                spawn_angle =
+                    parts[3].parse().unwrap();
+            }
+
+            _ => {}
+        }
+    }
+
+    Map {
+        walls,
+        floor_texture,
+        ceiling_texture,
+        spawn,
+        spawn_angle,
+    }
+}
+
+// ============================================================================
+// FONT DRAWING
+// ============================================================================
+
+fn draw_text(
+    frame: &mut [u8],
+    font: &Font,
+    text: &str,
+    start_x: i32,
+    start_y: i32,
+    scale: f32,
+    color: [u8; 3],
+) {
+
+    let mut pen_x = start_x;
+
+    for ch in text.chars() {
+
+        let (metrics, bitmap) =
+            font.rasterize(ch, scale);
+
+        for y in 0..metrics.height {
+
+            for x in 0..metrics.width {
+
+                let alpha =
+                    bitmap[y * metrics.width + x];
+
+                if alpha == 0 {
+                    continue;
+                }
+
+                let px =
+                    pen_x + x as i32;
+
+                let py =
+                    start_y + y as i32;
+
+                if px < 0
+                    || py < 0
+                    || px >= WIDTH as i32
+                    || py >= HEIGHT as i32
+                {
+                    continue;
+                }
+
+                let idx =
+                    ((py as usize * WIDTH as usize)
+                        + px as usize)
+                        * 4;
+
+                frame[idx] = color[0];
+                frame[idx + 1] = color[1];
+                frame[idx + 2] = color[2];
+                frame[idx + 3] = alpha;
+            }
+        }
+
+        pen_x +=
+            metrics.advance_width as i32;
+    }
+}
+
+// ============================================================================
+// MAIN
+// ============================================================================
+
 fn main() {
 
-    let event_loop = EventLoop::new().unwrap();
+    let config: GameConfig =
+        toml::from_str(
+            &fs::read_to_string(
+                "config/game.toml"
+            )
+            .unwrap(),
+        )
+        .unwrap();
+
+    let current_map =
+        load_map(
+            &config
+                .episode[0]
+                .maps[0]
+                .file
+        );
+
+    let font_bytes =
+        fs::read(
+            &config.menu.font
+        )
+        .unwrap();
+
+    let menu_font =
+        Font::from_bytes(
+            font_bytes,
+            fontdue::FontSettings::default(),
+        )
+        .unwrap();
+
+    let menu_background =
+        Texture::load(
+            &config.menu.background
+        );
+
+    let texture_n =
+        Texture::load(
+            "assets/textures/textureN.png"
+        );
+
+    let texture_s =
+        Texture::load(
+            "assets/textures/textureS.png"
+        );
+
+    let texture_e =
+        Texture::load(
+            "assets/textures/textureE.png"
+        );
+
+    let texture_w =
+        Texture::load(
+            "assets/textures/textureW.png"
+        );
+
+    let texture_u =
+        Texture::load(
+            "assets/textures/textureU.png"
+        );
+
+    let texture_d =
+        Texture::load(
+            "assets/textures/textureD.png"
+        );
+
+    let bindings =
+        KeyBindings::load(
+            "config/keyboard.txt"
+        );
+
+    let event_loop =
+        EventLoop::new().unwrap();
 
     let window = Arc::new(
+
         WindowBuilder::new()
-            .with_title("Minerva Base")
-            .with_inner_size(
-                LogicalSize::new(WIDTH, HEIGHT),
+
+            .with_title(
+                "Minerva Base"
             )
+
+            .with_inner_size(
+                LogicalSize::new(
+                    WIDTH,
+                    HEIGHT,
+                ),
+            )
+
             .build(&event_loop)
             .unwrap(),
     );
@@ -163,70 +596,66 @@ fn main() {
             HEIGHT,
             surface_texture,
         )
-        .expect("failed to create pixel surface");
+        .unwrap();
 
-    let texture_n =
-        Texture::load("assets/textures/textureN.png");
+    let mut pressed_keys =
+        HashSet::new();
 
-    let texture_s =
-        Texture::load("assets/textures/textureS.png");
+    let mut game_state =
+        GameState::MainMenu;
 
-    let texture_e =
-        Texture::load("assets/textures/textureE.png");
+    let mut menu_index = 0usize;
 
-    let texture_w =
-        Texture::load("assets/textures/textureW.png");
+    let mut right_mouse_held =
+        false;
 
-    let texture_u =
-        Texture::load("assets/textures/textureU.png");
+    let mut player =
+        Player {
 
-    let texture_d =
-        Texture::load("assets/textures/textureD.png");
+            position:
+                current_map.spawn,
 
-    let bindings =
-        KeyBindings::load("config/keyboard.txt");
+            angle:
+                current_map.spawn_angle,
 
-    let mut pressed_keys = HashSet::new();
+            pitch: 0.0,
+        };
 
-    let mut right_mouse_held = false;
-
-    let mut player = Player {
-        position: Vec2::new(
-            ROOM_SIZE / 2.0,
-            ROOM_SIZE / 2.0,
-        ),
-        angle: 0.0,
-        pitch: 0.0,
-    };
-
-    event_loop
-        .run(move |event, target| {
+    event_loop.run(
+        move |event, target| {
 
             match event {
 
                 Event::DeviceEvent {
+
                     event:
                         DeviceEvent::MouseMotion {
                             delta,
                         },
+
                     ..
                 } => {
 
                     if right_mouse_held {
 
-                        player.angle +=
-                            delta.0 as f32
-                                * MOUSE_SENSITIVITY;
+                        if game_state
+                            == GameState::Playing
+                        {
 
-                        player.pitch +=
-                            delta.1 as f32
-                                * 0.2;
+                            player.angle +=
+                                delta.0 as f32
+                                    * MOUSE_SENSITIVITY_X;
 
-                        player.pitch =
-                            player.pitch.clamp(
-                                -120.0,
-                                120.0,
-                            );
+                            player.pitch +=
+                                delta.1 as f32
+                                    * MOUSE_SENSITIVITY_Y;
+
+                            player.pitch =
+                                player.pitch.clamp(
+                                    -MAX_PITCH,
+                                    MAX_PITCH,
+                                );
+                        }
                     }
                 }
 
@@ -247,11 +676,14 @@ fn main() {
                             ..
                         } => {
 
-                            if button == MouseButton::Right {
+                            if button
+                                == MouseButton::Right
+                            {
 
                                 right_mouse_held =
                                     state
-                                        == ElementState::Pressed;
+                                    ==
+                                    ElementState::Pressed;
                             }
                         }
 
@@ -260,7 +692,8 @@ fn main() {
                             ..
                         } => {
 
-                            if let PhysicalKey::Code(code) =
+                            if let PhysicalKey::Code(code)
+                                =
                                 event.physical_key
                             {
 
@@ -274,30 +707,181 @@ fn main() {
                                         pressed_keys.remove(&code);
                                     }
                                 }
+
+                                if event.state
+                                    ==
+                                    ElementState::Pressed
+                                {
+
+                                    if game_state
+                                        ==
+                                        GameState::MainMenu
+                                    {
+
+                                        if code
+                                            ==
+                                            bindings.up
+                                        {
+
+                                            if menu_index > 0 {
+                                                menu_index -= 1;
+                                            }
+                                        }
+
+                                        if code
+                                            ==
+                                            bindings.down
+                                        {
+
+                                            if menu_index < 1 {
+                                                menu_index += 1;
+                                            }
+                                        }
+
+                                        if code
+                                            ==
+                                            bindings.select
+                                        {
+
+                                            if menu_index == 0 {
+
+                                                game_state =
+                                                    GameState::Playing;
+                                            }
+
+                                            else {
+
+                                                target.exit();
+                                            }
+                                        }
+                                    }
+
+                                    else if code
+    ==
+    bindings.menu
+{
+
+    game_state =
+        match game_state {
+
+            GameState::Playing =>
+                GameState::MainMenu,
+
+            GameState::MainMenu =>
+                GameState::Playing,
+
+            GameState::Paused =>
+                GameState::Playing,
+
+            _ =>
+                game_state,
+        };
+}
+                                }
                             }
                         }
 
                         WindowEvent::RedrawRequested => {
 
-                            update_player(
-                                &mut player,
-                                &bindings,
-                                &pressed_keys,
-                            );
-
                             let frame =
                                 pixels.frame_mut();
 
-                            render(
-                                frame,
-                                &player,
-                                &texture_n,
-                                &texture_s,
-                                &texture_e,
-                                &texture_w,
-                                &texture_u,
-                                &texture_d,
-                            );
+                            match game_state {
+
+                                GameState::MainMenu => {
+
+                                    for y in 0..HEIGHT as usize {
+
+                                        for x in 0..WIDTH as usize {
+
+                                            let idx =
+                                                (y * WIDTH as usize + x)
+                                                    * 4;
+
+                                            let color =
+                                                menu_background.sample(x, y);
+
+                                            frame[idx] = color[0];
+                                            frame[idx + 1] = color[1];
+                                            frame[idx + 2] = color[2];
+                                            frame[idx + 3] = 255;
+                                        }
+                                    }
+
+                                    draw_text(
+                                        frame,
+                                        &menu_font,
+                                        "SELECT EPISODE",
+                                        140,
+                                        80,
+                                        40.0,
+                                        [255,255,0],
+                                    );
+
+                                    let title_color =
+                                        if menu_index == 0 {
+                                            [255,255,0]
+                                        }
+                                        else {
+                                            [255,255,255]
+                                        };
+
+                                    let exit_color =
+                                        if menu_index == 1 {
+                                            [255,255,0]
+                                        }
+                                        else {
+                                            [255,255,255]
+                                        };
+
+                                    draw_text(
+                                        frame,
+                                        &menu_font,
+                                        &config
+                                            .episode[0]
+                                            .title,
+                                        180,
+                                        220,
+                                        30.0,
+                                        title_color,
+                                    );
+
+                                    draw_text(
+                                        frame,
+                                        &menu_font,
+                                        &config.menu.exit_message,
+                                        180,
+                                        280,
+                                        30.0,
+                                        exit_color,
+                                    );
+                                }
+
+                                GameState::Playing |
+                                GameState::Paused => {
+
+                                    update_player(
+                                        &mut player,
+                                        &bindings,
+                                        &pressed_keys,
+                                        &current_map,
+                                    );
+
+                                    render_world(
+                                        frame,
+                                        &player,
+                                        &current_map,
+                                        &texture_n,
+                                        &texture_s,
+                                        &texture_e,
+                                        &texture_w,
+                                        &texture_u,
+                                        &texture_d,
+                                    );
+                                }
+
+                                _ => {}
+                            }
 
                             pixels.render().unwrap();
                         }
@@ -307,26 +891,32 @@ fn main() {
                 }
 
                 Event::AboutToWait => {
-                    window
-                        .as_ref()
-                        .request_redraw();
+                    window.request_redraw();
                 }
 
                 _ => {}
             }
-        })
-        .unwrap();
+        }
+    ).unwrap();
 }
+
+// ============================================================================
+// PLAYER UPDATE
+// ============================================================================
 
 fn update_player(
     player: &mut Player,
     bindings: &KeyBindings,
     pressed_keys: &HashSet<KeyCode>,
+    map: &Map,
 ) {
 
     let mut speed = WALK_SPEED;
 
-    if pressed_keys.contains(&bindings.run) {
+    if pressed_keys.contains(
+        &bindings.run
+    ) {
+
         speed *= RUN_MULTIPLIER;
     }
 
@@ -345,39 +935,105 @@ fn update_player(
     let mut new_position =
         player.position;
 
-    if pressed_keys.contains(&bindings.forward) {
+    if pressed_keys.contains(
+        &bindings.forward
+    ) {
+
         new_position +=
             forward * speed;
     }
 
-    if pressed_keys.contains(&bindings.backward) {
+    if pressed_keys.contains(
+        &bindings.backward
+    ) {
+
         new_position -=
             forward * speed;
     }
 
-    if pressed_keys.contains(&bindings.left) {
+    if pressed_keys.contains(
+        &bindings.left
+    ) {
+
         new_position -=
             right * speed;
     }
 
-    if pressed_keys.contains(&bindings.right) {
+    if pressed_keys.contains(
+        &bindings.right
+    ) {
+
         new_position +=
             right * speed;
     }
 
-    if new_position.x > PLAYER_RADIUS
-        && new_position.x < ROOM_SIZE - PLAYER_RADIUS
-        && new_position.y > PLAYER_RADIUS
-        && new_position.y < ROOM_SIZE - PLAYER_RADIUS
-    {
+    if collision_check(
+        new_position,
+        map,
+    ) {
+
         player.position =
             new_position;
     }
 }
 
-fn render(
+// ============================================================================
+// COLLISION
+// ============================================================================
+
+fn collision_check(
+    position: Vec2,
+    map: &Map,
+) -> bool {
+
+    for wall in &map.walls {
+
+        let wall_dir =
+            wall.end - wall.start;
+
+        let wall_length =
+            wall_dir.length();
+
+        let wall_normal =
+            wall_dir.normalize();
+
+        let to_player =
+            position - wall.start;
+
+        let projection =
+            to_player.dot(wall_normal);
+
+        if projection >= 0.0
+            &&
+            projection <= wall_length
+        {
+
+            let closest =
+                wall.start
+                    + wall_normal
+                        * projection;
+
+            let distance =
+                (position - closest)
+                    .length();
+
+            if distance < 10.0 {
+                return false;
+            }
+        }
+    }
+
+    true
+}
+
+// ============================================================================
+// RENDER WORLD
+// ============================================================================
+
+fn render_world(
     frame: &mut [u8],
     player: &Player,
+    map: &Map,
     texture_n: &Texture,
     texture_s: &Texture,
     texture_e: &Texture,
@@ -386,16 +1042,100 @@ fn render(
     texture_d: &Texture,
 ) {
 
-    let pitch_offset =
-        player.pitch as i32;
+    for y in 0..HEIGHT as usize {
+
+        let ray_angle_step =
+            FOV / WIDTH as f32;
+
+        let p =
+            y as f32 - HEIGHT as f32 / 2.0
+                - player.pitch;
+
+        // FLOOR + CEILING CASTING
+
+        if p.abs() > 0.1 {
+
+            let row_distance =
+                (HEIGHT as f32 / 2.0) / p.abs();
+
+            for x in 0..WIDTH as usize {
+
+                let ray_angle =
+                    player.angle
+                        - FOV / 2.0
+                        + x as f32 * ray_angle_step;
+
+                let ray_dir =
+                    Vec2::new(
+                        ray_angle.cos(),
+                        ray_angle.sin(),
+                    );
+
+                let world_x =
+                    player.position.x
+                        + ray_dir.x
+                            * row_distance
+                            * 64.0;
+
+                let world_y =
+                    player.position.y
+                        + ray_dir.y
+                            * row_distance
+                            * 64.0;
+
+                let tex_x =
+                    world_x as usize % TEXTURE_SIZE;
+
+                let tex_y =
+                    world_y as usize % TEXTURE_SIZE;
+
+                let idx =
+                    (y * WIDTH as usize + x)
+                        * 4;
+
+                // FLOOR
+
+                if y > HEIGHT as usize / 2 {
+
+                    let color =
+                        texture_d.sample(
+                            tex_x,
+                            tex_y,
+                        );
+
+                    frame[idx] = color[0];
+                    frame[idx + 1] = color[1];
+                    frame[idx + 2] = color[2];
+                    frame[idx + 3] = 255;
+                }
+
+                // CEILING
+
+                else {
+
+                    let color =
+                        texture_u.sample(
+                            tex_x,
+                            tex_y,
+                        );
+
+                    frame[idx] = color[0];
+                    frame[idx + 1] = color[1];
+                    frame[idx + 2] = color[2];
+                    frame[idx + 3] = 255;
+                }
+            }
+        }
+    }
+
+    // WALL RENDERING
 
     for x in 0..WIDTH as usize {
 
         let ray_angle =
             player.angle
                 - FOV / 2.0
-                + (x as f32
-                    / WIDTH as f32)
+                + (x as f32 / WIDTH as f32)
                     * FOV;
 
         let ray_dir =
@@ -404,84 +1144,71 @@ fn render(
                 ray_angle.sin(),
             );
 
-        let mut distance = 0.0;
+        let mut closest_distance =
+            999999.0;
 
-        let step = 1.0;
-
-        let mut hit_x = 0.0;
-        let mut hit_y = 0.0;
-
-        let mut wall_texture =
+        let mut hit_texture =
             texture_n;
 
-        let mut horizontal_hit =
-            false;
+        let mut hit_u = 0.0;
 
-        while distance < 2000.0 {
+        for wall in &map.walls {
 
-            let pos =
-                player.position
-                    + ray_dir * distance;
+            if let Some((distance, hit_point)) =
+                raycast_wall(
+                    player.position,
+                    ray_dir,
+                    wall,
+                )
+            {
 
-            if pos.x <= 0.0 {
+                if distance
+                    < closest_distance
+                {
 
-                wall_texture =
-                    texture_w;
+                    closest_distance =
+                        distance;
 
-                hit_x = pos.x;
-                hit_y = pos.y;
+                    let dx =
+                       (wall.end.x - wall.start.x).abs();
 
-                horizontal_hit = false;
+                    let dy =
+                       (wall.end.y - wall.start.y).abs();
 
-                break;
+                    if dx > dy {
+
+                        hit_u = hit_point.x;
+
+                    } else {
+
+                        hit_u = hit_point.y;
+                    }
+
+                    hit_texture =
+                        match wall.texture.as_str() {
+
+                            "textureN" =>
+                                texture_n,
+
+                            "textureS" =>
+                                texture_s,
+
+                            "textureE" =>
+                                texture_e,
+
+                            "textureW" =>
+                                texture_w,
+
+                            _ =>
+                                texture_n,
+                        };
+                }
             }
-
-            if pos.x >= ROOM_SIZE {
-
-                wall_texture =
-                    texture_e;
-
-                hit_x = pos.x;
-                hit_y = pos.y;
-
-                horizontal_hit = false;
-
-                break;
-            }
-
-            if pos.y <= 0.0 {
-
-                wall_texture =
-                    texture_n;
-
-                hit_x = pos.x;
-                hit_y = pos.y;
-
-                horizontal_hit = true;
-
-                break;
-            }
-
-            if pos.y >= ROOM_SIZE {
-
-                wall_texture =
-                    texture_s;
-
-                hit_x = pos.x;
-                hit_y = pos.y;
-
-                horizontal_hit = true;
-
-                break;
-            }
-
-            distance += step;
         }
 
         let corrected_distance =
-            distance
-                * (player.angle
-                    - ray_angle)
+            closest_distance
+                * (player.angle - ray_angle)
                     .cos();
 
         let wall_height =
@@ -490,142 +1217,123 @@ fn render(
 
         let wall_top =
             ((HEIGHT as f32 / 2.0)
-                - wall_height / 2.0)
-                .max(0.0)
-                as i32
-                + pitch_offset;
+                - wall_height / 2.0
+                + player.pitch)
+                as i32;
 
         let wall_bottom =
             ((HEIGHT as f32 / 2.0)
-                + wall_height / 2.0)
-                .min(
-                    HEIGHT as f32 - 1.0,
-                )
-                as i32
-                + pitch_offset;
+                + wall_height / 2.0
+                + player.pitch)
+                as i32;
 
-        for y in 0..HEIGHT as usize {
+        // PROPER WALL TILING
+
+        let texture_x =
+            hit_u.abs() as usize
+            % TEXTURE_SIZE;
+
+        for y in wall_top..wall_bottom {
+
+            if y < 0 || y >= HEIGHT as i32 {
+                continue;
+            }
+
+            let wall_y =
+                y as f32 - wall_top as f32;
+
+            let texture_y =
+                ((wall_y / wall_height)
+               * TEXTURE_SIZE as f32)
+               .clamp(0.0, 63.0)
+                as usize;
+
+            let color =
+                hit_texture.sample(
+                    texture_x,
+                    texture_y,
+                );
 
             let idx =
-                (y * WIDTH as usize + x)
+                ((y as usize * WIDTH as usize)
+                    + x)
                     * 4;
 
-            let yi = y as i32;
-
-            if yi < wall_top {
-
-                let ceiling_dist =
-                    (HEIGHT as f32 / 2.0)
-                        / ((HEIGHT as f32 / 2.0)
-                            - yi as f32
-                            + player.pitch);
-
-                let world_x =
-                    player.position.x
-                        + ray_dir.x
-                            * ceiling_dist
-                            * 64.0;
-
-                let world_y =
-                    player.position.y
-                        + ray_dir.y
-                            * ceiling_dist
-                            * 64.0;
-
-                let color =
-                    texture_u.sample(
-                        world_x as usize,
-                        world_y as usize,
-                    );
-
-                frame[idx] = color[0];
-                frame[idx + 1] = color[1];
-                frame[idx + 2] = color[2];
-                frame[idx + 3] = 255;
-
-            } else if yi > wall_bottom {
-
-                let floor_dist =
-                    (HEIGHT as f32 / 2.0)
-                        / (yi as f32
-                            - HEIGHT as f32 / 2.0
-                            - player.pitch);
-
-                let world_x =
-                    player.position.x
-                        + ray_dir.x
-                            * floor_dist
-                            * 64.0;
-
-                let world_y =
-                    player.position.y
-                        + ray_dir.y
-                            * floor_dist
-                            * 64.0;
-
-                let color =
-                    texture_d.sample(
-                        world_x as usize,
-                        world_y as usize,
-                    );
-
-                frame[idx] = color[0];
-                frame[idx + 1] = color[1];
-                frame[idx + 2] = color[2];
-                frame[idx + 3] = 255;
-
-            } else {
-
-                let tex_coord =
-                    if horizontal_hit {
-                        hit_x
-                    } else {
-                        hit_y
-                    };
-
-                let tx =
-                    tex_coord as usize
-                        % TEXTURE_SIZE;
-
-                let wall_y =
-                    yi as f32
-                        - wall_top as f32;
-
-                let ty =
-                    ((wall_y
-                        / wall_height)
-                        * TEXTURE_SIZE as f32)
-                        as usize;
-
-                let color =
-                    wall_texture.sample(
-                        tx,
-                        ty,
-                    );
-
-                let shade =
-                    1.0
-                        / (1.0
-                            + corrected_distance
-                                * 0.01);
-
-                frame[idx] =
-                    (color[0] as f32
-                        * shade)
-                        as u8;
-
-                frame[idx + 1] =
-                    (color[1] as f32
-                        * shade)
-                        as u8;
-
-                frame[idx + 2] =
-                    (color[2] as f32
-                        * shade)
-                        as u8;
-
-                frame[idx + 3] = 255;
-            }
+            frame[idx] = color[0];
+            frame[idx + 1] = color[1];
+            frame[idx + 2] = color[2];
+            frame[idx + 3] = 255;
         }
+    }
+}
+
+// ============================================================================
+// RAYCAST
+// ============================================================================
+
+fn raycast_wall(
+    origin: Vec2,
+    dir: Vec2,
+    wall: &Wall,
+) -> Option<(f32, Vec2)> {
+
+    let x1 = wall.start.x;
+    let y1 = wall.start.y;
+
+    let x2 = wall.end.x;
+    let y2 = wall.end.y;
+
+    let x3 = origin.x;
+    let y3 = origin.y;
+
+    let x4 = origin.x + dir.x;
+    let y4 = origin.y + dir.y;
+
+    let denominator =
+        (x1 - x2) * (y3 - y4)
+            -
+        (y1 - y2) * (x3 - x4);
+
+    if denominator.abs() < 0.0001 {
+        return None;
+    }
+
+    let t =
+        ((x1 - x3) * (y3 - y4)
+            -
+        (y1 - y3) * (x3 - x4))
+            / denominator;
+
+    let u =
+        -(
+            (x1 - x2) * (y1 - y3)
+                -
+            (y1 - y2) * (x1 - x3)
+        )
+            / denominator;
+
+    if t >= 0.0
+        &&
+        t <= 1.0
+        &&
+        u > 0.0
+    {
+
+        let hit_point =
+            origin + dir * u;
+
+        let distance =
+            (hit_point - origin)
+                .length();
+
+        Some((
+            distance,
+            hit_point,
+        ))
+    }
+
+    else {
+
+        None
     }
 }

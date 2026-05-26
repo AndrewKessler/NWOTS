@@ -1,0 +1,9 @@
+floor textureD
+ceiling textureU
+
+wall 0 0 512 0 textureN
+wall 512 0 512 512 textureE
+wall 512 512 0 512 textureS
+wall 0 512 0 0 textureW
+
+spawn 256 256 0
