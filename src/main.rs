@@ -1,21 +1,24 @@
 // ============================================================================
 // MINERVA BASE ENGINE
-// FIXED VERSION
-// - Fixed menu navigation
-// - Fixed EXIT rendering
-// - Fixed movement
-// - Fixed wall scaling bug
-// - Restored floor/ceiling rendering
-// - Proper map loading
-// - Proper wall texture tiling
+// SECTOR RENDERER
+//
+// FEATURES
+// - Menu restored
+// - ESC pause menu
+// - Font rendering restored
+// - Portal rendering exclusion
+// - Sector-aware floors/ceilings
+// - Sector polygons
+// - Perspective correct floor motion
+// - Proper wall tiling
+// - Proper portal openings
 // ============================================================================
 
 use fontdue::Font;
 use glam::Vec2;
-use image::GenericImageView;
 use pixels::{Pixels, SurfaceTexture};
 use serde::Deserialize;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::f32::consts::PI;
 use std::fs;
 use std::sync::Arc;
@@ -43,13 +46,13 @@ const HEIGHT: u32 = 480;
 
 const FOV: f32 = PI / 3.0;
 
+const TEXTURE_SIZE: usize = 64;
+
 const WALK_SPEED: f32 = 3.0;
 const RUN_MULTIPLIER: f32 = 2.0;
 
-const TEXTURE_SIZE: usize = 64;
-
 const MOUSE_SENSITIVITY_X: f32 = 0.003;
-const MOUSE_SENSITIVITY_Y: f32 = 0.3;
+const MOUSE_SENSITIVITY_Y: f32 = 0.5;
 
 const MAX_PITCH: f32 = 120.0;
 
@@ -83,15 +86,13 @@ struct MapConfig {
 }
 
 // ============================================================================
-// GAME STATES
+// GAME STATE
 // ============================================================================
 
 #[derive(Clone, Copy, PartialEq)]
 enum GameState {
     MainMenu,
-    EpisodeMenu,
     Playing,
-    Paused,
 }
 
 // ============================================================================
@@ -105,6 +106,16 @@ struct Player {
 }
 
 // ============================================================================
+// WALL TYPES
+// ============================================================================
+
+#[derive(Clone)]
+enum WallType {
+    Solid,
+    Portal(String),
+}
+
+// ============================================================================
 // WALL
 // ============================================================================
 
@@ -113,6 +124,18 @@ struct Wall {
     start: Vec2,
     end: Vec2,
     texture: String,
+    wall_type: WallType,
+}
+
+// ============================================================================
+// SECTOR
+// ============================================================================
+
+struct Sector {
+    name: String,
+    floor_texture: String,
+    ceiling_texture: String,
+    walls: Vec<Wall>,
 }
 
 // ============================================================================
@@ -120,9 +143,7 @@ struct Wall {
 // ============================================================================
 
 struct Map {
-    walls: Vec<Wall>,
-    floor_texture: String,
-    ceiling_texture: String,
+    sectors: Vec<Sector>,
     spawn: Vec2,
     spawn_angle: f32,
 }
@@ -141,11 +162,13 @@ impl Texture {
 
     fn load(path: &str) -> Self {
 
-        let img = image::open(path)
-            .expect("failed to load texture")
-            .to_rgba8();
+        let img =
+            image::open(path)
+                .unwrap()
+                .to_rgba8();
 
-        let (w, h) = img.dimensions();
+        let (w, h) =
+            img.dimensions();
 
         Self {
             width: w as usize,
@@ -160,8 +183,11 @@ impl Texture {
         y: usize,
     ) -> [u8; 4] {
 
-        let tx = x % self.width;
-        let ty = y % self.height;
+        let tx =
+            x % self.width;
+
+        let ty =
+            y % self.height;
 
         let idx =
             (ty * self.width + tx) * 4;
@@ -172,253 +198,6 @@ impl Texture {
             self.data[idx + 2],
             self.data[idx + 3],
         ]
-    }
-}
-
-// ============================================================================
-// KEY BINDINGS
-// ============================================================================
-
-struct KeyBindings {
-
-    forward: KeyCode,
-    backward: KeyCode,
-
-    left: KeyCode,
-    right: KeyCode,
-
-    run: KeyCode,
-
-    menu: KeyCode,
-
-    up: KeyCode,
-    down: KeyCode,
-
-    select: KeyCode,
-}
-
-impl KeyBindings {
-
-    fn load(path: &str) -> Self {
-
-        let content =
-            fs::read_to_string(path)
-                .expect("failed to read keyboard.txt");
-
-        let mut bindings = Self {
-
-            forward: KeyCode::KeyW,
-            backward: KeyCode::KeyS,
-
-            left: KeyCode::KeyA,
-            right: KeyCode::KeyD,
-
-            run: KeyCode::ShiftLeft,
-
-            menu: KeyCode::Escape,
-
-            up: KeyCode::ArrowUp,
-            down: KeyCode::ArrowDown,
-
-            select: KeyCode::Enter,
-        };
-
-        for line in content.lines() {
-
-            let line = line.trim();
-
-                if line.is_empty()
-                || line.starts_with("#")
-                {
-                    continue;
-                }
-
-            let parts: Vec<&str> =
-                line.split('=').collect();
-
-            if parts.len() != 2 {
-                continue;
-            }
-
-            let key = parts[0].trim();
-
-            let value =
-                parts[1].trim();
-
-            let parsed =
-                parse_keycode(value);
-
-            match key {
-
-                "forward" =>
-                    bindings.forward = parsed,
-
-                "backward" =>
-                    bindings.backward = parsed,
-
-                "left" =>
-                    bindings.left = parsed,
-
-                "right" =>
-                    bindings.right = parsed,
-
-                "run" =>
-                    bindings.run = parsed,
-
-                "menu" =>
-                    bindings.menu = parsed,
-
-                "up" =>
-                    bindings.up = parsed,
-
-                "down" =>
-                    bindings.down = parsed,
-
-                "select" =>
-                    bindings.select = parsed,
-
-                _ => {}
-            }
-        }
-
-        bindings
-    }
-}
-
-// ============================================================================
-// KEY PARSER
-// ============================================================================
-
-fn parse_keycode(name: &str) -> KeyCode {
-
-    match name.to_lowercase().as_str() {
-
-        "w" => KeyCode::KeyW,
-        "a" => KeyCode::KeyA,
-        "s" => KeyCode::KeyS,
-        "d" => KeyCode::KeyD,
-
-        "shift" =>
-            KeyCode::ShiftLeft,
-
-        "esc" =>
-            KeyCode::Escape,
-
-        "up" =>
-            KeyCode::ArrowUp,
-
-        "down" =>
-            KeyCode::ArrowDown,
-
-        "enter" =>
-            KeyCode::Enter,
-
-        _ =>
-            KeyCode::Space,
-    }
-}
-
-// ============================================================================
-// MAP LOADER
-// ============================================================================
-
-fn load_map(path: &str) -> Map {
-
-    let content =
-        fs::read_to_string(path)
-            .expect("failed to load map");
-
-    let mut walls = Vec::new();
-
-    let mut floor_texture =
-        "textureD".to_string();
-
-    let mut ceiling_texture =
-        "textureU".to_string();
-
-    let mut spawn =
-        Vec2::new(256.0, 256.0);
-
-    let mut spawn_angle = 0.0;
-
-    for line in content.lines() {
-
-        let line = line.trim();
-
-        if line.is_empty() {
-            continue;
-        }
-
-        let parts: Vec<&str> =
-            line.split_whitespace()
-                .collect();
-
-        if parts.is_empty() {
-            continue;
-        }
-
-        match parts[0] {
-
-            "floor" => {
-                floor_texture =
-                    parts[1].to_string();
-            }
-
-            "ceiling" => {
-                ceiling_texture =
-                    parts[1].to_string();
-            }
-
-            "wall" => {
-
-                let x1: f32 =
-                    parts[1].parse().unwrap();
-
-                let y1: f32 =
-                    parts[2].parse().unwrap();
-
-                let x2: f32 =
-                    parts[3].parse().unwrap();
-
-                let y2: f32 =
-                    parts[4].parse().unwrap();
-
-                walls.push(
-                    Wall {
-                        start:
-                            Vec2::new(x1, y1),
-
-                        end:
-                            Vec2::new(x2, y2),
-
-                        texture:
-                            parts[5].to_string(),
-                    }
-                );
-            }
-
-            "spawn" => {
-
-                spawn.x =
-                    parts[1].parse().unwrap();
-
-                spawn.y =
-                    parts[2].parse().unwrap();
-
-                spawn_angle =
-                    parts[3].parse().unwrap();
-            }
-
-            _ => {}
-        }
-    }
-
-    Map {
-        walls,
-        floor_texture,
-        ceiling_texture,
-        spawn,
-        spawn_angle,
     }
 }
 
@@ -436,7 +215,8 @@ fn draw_text(
     color: [u8; 3],
 ) {
 
-    let mut pen_x = start_x;
+    let mut pen_x =
+        start_x;
 
     for ch in text.chars() {
 
@@ -476,12 +256,195 @@ fn draw_text(
                 frame[idx] = color[0];
                 frame[idx + 1] = color[1];
                 frame[idx + 2] = color[2];
-                frame[idx + 3] = alpha;
+                frame[idx + 3] = 255;
             }
         }
 
         pen_x +=
             metrics.advance_width as i32;
+    }
+}
+
+// ============================================================================
+// MAP LOADER
+// ============================================================================
+
+fn load_map(path: &str) -> Map {
+
+    let content =
+        fs::read_to_string(path)
+            .unwrap();
+
+    let mut sectors =
+        Vec::new();
+
+    let mut current_sector:
+        Option<Sector> = None;
+
+    let mut spawn =
+        Vec2::ZERO;
+
+    let mut spawn_angle =
+        0.0;
+
+    for line in content.lines() {
+
+        let line =
+            line.trim();
+
+        if line.is_empty()
+            || line.starts_with("#")
+        {
+            continue;
+        }
+
+        let parts: Vec<&str> =
+            line.split_whitespace()
+                .collect();
+
+        match parts[0] {
+
+            "sector" => {
+
+                if let Some(sec)
+                    = current_sector.take()
+                {
+                    sectors.push(sec);
+                }
+
+                current_sector =
+                    Some(
+                        Sector {
+
+                            name:
+                                parts[1].to_string(),
+
+                            floor_texture:
+                                "textureD".to_string(),
+
+                            ceiling_texture:
+                                "textureU".to_string(),
+
+                            walls:
+                                Vec::new(),
+                        }
+                    );
+            }
+
+            "floor" => {
+
+                if let Some(sec)
+                    = current_sector.as_mut()
+                {
+
+                    sec.floor_texture =
+                        parts[1].to_string();
+                }
+            }
+
+            "ceiling" => {
+
+                if let Some(sec)
+                    = current_sector.as_mut()
+                {
+
+                    sec.ceiling_texture =
+                        parts[1].to_string();
+                }
+            }
+
+            "wall" => {
+
+                if let Some(sec)
+                    = current_sector.as_mut()
+                {
+
+                    sec.walls.push(
+
+                        Wall {
+
+                            start:
+                                Vec2::new(
+                                    parts[1].parse().unwrap(),
+                                    parts[2].parse().unwrap(),
+                                ),
+
+                            end:
+                                Vec2::new(
+                                    parts[3].parse().unwrap(),
+                                    parts[4].parse().unwrap(),
+                                ),
+
+                            texture:
+                                parts[5].to_string(),
+
+                            wall_type:
+                                WallType::Solid,
+                        }
+                    );
+                }
+            }
+
+            "portal" => {
+
+                if let Some(sec)
+                    = current_sector.as_mut()
+                {
+
+                    sec.walls.push(
+
+                        Wall {
+
+                            start:
+                                Vec2::new(
+                                    parts[1].parse().unwrap(),
+                                    parts[2].parse().unwrap(),
+                                ),
+
+                            end:
+                                Vec2::new(
+                                    parts[3].parse().unwrap(),
+                                    parts[4].parse().unwrap(),
+                                ),
+
+                            texture:
+                                String::new(),
+
+                            wall_type:
+                                WallType::Portal(
+                                    parts[5].to_string()
+                                ),
+                        }
+                    );
+                }
+            }
+
+            "spawn" => {
+
+                spawn =
+                    Vec2::new(
+                        parts[1].parse().unwrap(),
+                        parts[2].parse().unwrap(),
+                    );
+
+                spawn_angle =
+                    parts[3].parse().unwrap();
+            }
+
+            _ => {}
+        }
+    }
+
+    if let Some(sec)
+        = current_sector.take()
+    {
+        sectors.push(sec);
+    }
+
+    Map {
+        sectors,
+        spawn,
+        spawn_angle,
     }
 }
 
@@ -500,7 +463,7 @@ fn main() {
         )
         .unwrap();
 
-    let current_map =
+    let map =
         load_map(
             &config
                 .episode[0]
@@ -526,40 +489,64 @@ fn main() {
             &config.menu.background
         );
 
-    let texture_n =
-        Texture::load(
-            "assets/textures/textureN.png"
-        );
+   let mut textures =
+    HashMap::new();
 
-    let texture_s =
-        Texture::load(
-            "assets/textures/textureS.png"
-        );
+textures.insert(
+    "textureN".to_string(),
+    Texture::load(
+        "assets/textures/textureN.png"
+    ),
+);
 
-    let texture_e =
-        Texture::load(
-            "assets/textures/textureE.png"
-        );
+textures.insert(
+    "textureS".to_string(),
+    Texture::load(
+        "assets/textures/textureS.png"
+    ),
+);
 
-    let texture_w =
-        Texture::load(
-            "assets/textures/textureW.png"
-        );
+textures.insert(
+    "textureE".to_string(),
+    Texture::load(
+        "assets/textures/textureE.png"
+    ),
+);
 
-    let texture_u =
-        Texture::load(
-            "assets/textures/textureU.png"
-        );
+textures.insert(
+    "textureW".to_string(),
+    Texture::load(
+        "assets/textures/textureW.png"
+    ),
+);
 
-    let texture_d =
-        Texture::load(
-            "assets/textures/textureD.png"
-        );
+textures.insert(
+    "textureU".to_string(),
+    Texture::load(
+        "assets/textures/textureU.png"
+    ),
+);
 
-    let bindings =
-        KeyBindings::load(
-            "config/keyboard.txt"
-        );
+textures.insert(
+    "textureD".to_string(),
+    Texture::load(
+        "assets/textures/textureD.png"
+    ),
+);
+
+textures.insert(
+    "metalfloor".to_string(),
+    Texture::load(
+        "assets/textures/metalfloor.png"
+    ),
+);
+
+textures.insert(
+    "metalroof".to_string(),
+    Texture::load(
+        "assets/textures/metalroof.png"
+    ),
+);
 
     let event_loop =
         EventLoop::new().unwrap();
@@ -598,25 +585,26 @@ fn main() {
         )
         .unwrap();
 
-    let mut pressed_keys =
-        HashSet::new();
-
     let mut game_state =
         GameState::MainMenu;
 
-    let mut menu_index = 0usize;
+    let mut menu_index =
+        0usize;
 
-    let mut right_mouse_held =
+    let mut right_mouse =
         false;
+
+    let mut pressed_keys =
+        HashSet::new();
 
     let mut player =
         Player {
 
             position:
-                current_map.spawn,
+                map.spawn,
 
             angle:
-                current_map.spawn_angle,
+                map.spawn_angle,
 
             pitch: 0.0,
         };
@@ -636,26 +624,26 @@ fn main() {
                     ..
                 } => {
 
-                    if right_mouse_held {
+                    if right_mouse
+                        &&
+                        game_state
+                            ==
+                            GameState::Playing
+                    {
 
-                        if game_state
-                            == GameState::Playing
-                        {
+                        player.angle +=
+                            delta.0 as f32
+                                * MOUSE_SENSITIVITY_X;
 
-                            player.angle +=
-                                delta.0 as f32
-                                    * MOUSE_SENSITIVITY_X;
+                        player.pitch +=
+                            delta.1 as f32
+                                * MOUSE_SENSITIVITY_Y;
 
-                            player.pitch +=
-                                delta.1 as f32
-                                    * MOUSE_SENSITIVITY_Y;
-
-                            player.pitch =
-                                player.pitch.clamp(
-                                    -MAX_PITCH,
-                                    MAX_PITCH,
-                                );
-                        }
+                        player.pitch =
+                            player.pitch.clamp(
+                                -MAX_PITCH,
+                                MAX_PITCH,
+                            );
                     }
                 }
 
@@ -677,10 +665,11 @@ fn main() {
                         } => {
 
                             if button
-                                == MouseButton::Right
+                                ==
+                                MouseButton::Right
                             {
 
-                                right_mouse_held =
+                                right_mouse =
                                     state
                                     ==
                                     ElementState::Pressed;
@@ -713,6 +702,26 @@ fn main() {
                                     ElementState::Pressed
                                 {
 
+                                    // ESC
+
+                                    if code
+                                        ==
+                                        KeyCode::Escape
+                                    {
+
+                                        game_state =
+                                            match game_state {
+
+                                                GameState::MainMenu =>
+                                                    GameState::Playing,
+
+                                                GameState::Playing =>
+                                                    GameState::MainMenu,
+                                            };
+                                    }
+
+                                    // MENU
+
                                     if game_state
                                         ==
                                         GameState::MainMenu
@@ -720,7 +729,7 @@ fn main() {
 
                                         if code
                                             ==
-                                            bindings.up
+                                            KeyCode::ArrowUp
                                         {
 
                                             if menu_index > 0 {
@@ -730,7 +739,7 @@ fn main() {
 
                                         if code
                                             ==
-                                            bindings.down
+                                            KeyCode::ArrowDown
                                         {
 
                                             if menu_index < 1 {
@@ -740,7 +749,7 @@ fn main() {
 
                                         if code
                                             ==
-                                            bindings.select
+                                            KeyCode::Enter
                                         {
 
                                             if menu_index == 0 {
@@ -755,28 +764,6 @@ fn main() {
                                             }
                                         }
                                     }
-
-                                    else if code
-    ==
-    bindings.menu
-{
-
-    game_state =
-        match game_state {
-
-            GameState::Playing =>
-                GameState::MainMenu,
-
-            GameState::MainMenu =>
-                GameState::Playing,
-
-            GameState::Paused =>
-                GameState::Playing,
-
-            _ =>
-                game_state,
-        };
-}
                                 }
                             }
                         }
@@ -786,101 +773,34 @@ fn main() {
                             let frame =
                                 pixels.frame_mut();
 
-                            match game_state {
+                            if game_state
+                                ==
+                                GameState::MainMenu
+                            {
 
-                                GameState::MainMenu => {
+                                render_menu(
+                                    frame,
+                                    &menu_background,
+                                    &menu_font,
+                                    &config,
+                                    menu_index,
+                                );
+                            }
 
-                                    for y in 0..HEIGHT as usize {
+                            else {
 
-                                        for x in 0..WIDTH as usize {
+                                update_player(
+                                    &mut player,
+                                    &pressed_keys,
+                                    &map,
+                                );
 
-                                            let idx =
-                                                (y * WIDTH as usize + x)
-                                                    * 4;
-
-                                            let color =
-                                                menu_background.sample(x, y);
-
-                                            frame[idx] = color[0];
-                                            frame[idx + 1] = color[1];
-                                            frame[idx + 2] = color[2];
-                                            frame[idx + 3] = 255;
-                                        }
-                                    }
-
-                                    draw_text(
-                                        frame,
-                                        &menu_font,
-                                        "SELECT EPISODE",
-                                        140,
-                                        80,
-                                        40.0,
-                                        [255,255,0],
-                                    );
-
-                                    let title_color =
-                                        if menu_index == 0 {
-                                            [255,255,0]
-                                        }
-                                        else {
-                                            [255,255,255]
-                                        };
-
-                                    let exit_color =
-                                        if menu_index == 1 {
-                                            [255,255,0]
-                                        }
-                                        else {
-                                            [255,255,255]
-                                        };
-
-                                    draw_text(
-                                        frame,
-                                        &menu_font,
-                                        &config
-                                            .episode[0]
-                                            .title,
-                                        180,
-                                        220,
-                                        30.0,
-                                        title_color,
-                                    );
-
-                                    draw_text(
-                                        frame,
-                                        &menu_font,
-                                        &config.menu.exit_message,
-                                        180,
-                                        280,
-                                        30.0,
-                                        exit_color,
-                                    );
-                                }
-
-                                GameState::Playing |
-                                GameState::Paused => {
-
-                                    update_player(
-                                        &mut player,
-                                        &bindings,
-                                        &pressed_keys,
-                                        &current_map,
-                                    );
-
-                                    render_world(
-                                        frame,
-                                        &player,
-                                        &current_map,
-                                        &texture_n,
-                                        &texture_s,
-                                        &texture_e,
-                                        &texture_w,
-                                        &texture_u,
-                                        &texture_d,
-                                    );
-                                }
-
-                                _ => {}
+                                render_world(
+                                frame,
+                                &player,
+                                &map,
+                                &textures,
+                                );
                             }
 
                             pixels.render().unwrap();
@@ -901,23 +821,101 @@ fn main() {
 }
 
 // ============================================================================
+// MENU RENDERING
+// ============================================================================
+
+fn render_menu(
+    frame: &mut [u8],
+    background: &Texture,
+    font: &Font,
+    config: &GameConfig,
+    menu_index: usize,
+) {
+
+    for y in 0..HEIGHT as usize {
+
+        for x in 0..WIDTH as usize {
+
+            let idx =
+                (y * WIDTH as usize + x)
+                    * 4;
+
+            let color =
+                background.sample(x, y);
+
+            frame[idx] = color[0];
+            frame[idx + 1] = color[1];
+            frame[idx + 2] = color[2];
+            frame[idx + 3] = 255;
+        }
+    }
+
+    draw_text(
+        frame,
+        font,
+        "SELECT EPISODE",
+        120,
+        80,
+        40.0,
+        [255,255,0],
+    );
+
+    let title_color =
+        if menu_index == 0 {
+            [255,255,0]
+        }
+        else {
+            [255,255,255]
+        };
+
+    let exit_color =
+        if menu_index == 1 {
+            [255,255,0]
+        }
+        else {
+            [255,255,255]
+        };
+
+    draw_text(
+        frame,
+        font,
+        &config.episode[0].title,
+        180,
+        220,
+        30.0,
+        title_color,
+    );
+
+    draw_text(
+        frame,
+        font,
+        &config.menu.exit_message,
+        180,
+        280,
+        30.0,
+        exit_color,
+    );
+}
+
+// ============================================================================
 // PLAYER UPDATE
 // ============================================================================
 
 fn update_player(
     player: &mut Player,
-    bindings: &KeyBindings,
-    pressed_keys: &HashSet<KeyCode>,
+    keys: &HashSet<KeyCode>,
     map: &Map,
 ) {
 
-    let mut speed = WALK_SPEED;
+    let mut speed =
+        WALK_SPEED;
 
-    if pressed_keys.contains(
-        &bindings.run
+    if keys.contains(
+        &KeyCode::ShiftLeft
     ) {
 
-        speed *= RUN_MULTIPLIER;
+        speed *=
+            RUN_MULTIPLIER;
     }
 
     let forward =
@@ -935,32 +933,32 @@ fn update_player(
     let mut new_position =
         player.position;
 
-    if pressed_keys.contains(
-        &bindings.forward
+    if keys.contains(
+        &KeyCode::KeyW
     ) {
 
         new_position +=
             forward * speed;
     }
 
-    if pressed_keys.contains(
-        &bindings.backward
+    if keys.contains(
+        &KeyCode::KeyS
     ) {
 
         new_position -=
             forward * speed;
     }
 
-    if pressed_keys.contains(
-        &bindings.left
+    if keys.contains(
+        &KeyCode::KeyA
     ) {
 
         new_position -=
             right * speed;
     }
 
-    if pressed_keys.contains(
-        &bindings.right
+    if keys.contains(
+        &KeyCode::KeyD
     ) {
 
         new_position +=
@@ -986,39 +984,49 @@ fn collision_check(
     map: &Map,
 ) -> bool {
 
-    for wall in &map.walls {
+    for sector in &map.sectors {
 
-        let wall_dir =
-            wall.end - wall.start;
+        for wall in &sector.walls {
 
-        let wall_length =
-            wall_dir.length();
+            if let WallType::Solid =
+                wall.wall_type
+            {
 
-        let wall_normal =
-            wall_dir.normalize();
+                let wall_dir =
+                    wall.end - wall.start;
 
-        let to_player =
-            position - wall.start;
+                let wall_length =
+                    wall_dir.length();
 
-        let projection =
-            to_player.dot(wall_normal);
+                let wall_normal =
+                    wall_dir.normalize();
 
-        if projection >= 0.0
-            &&
-            projection <= wall_length
-        {
+                let to_player =
+                    position - wall.start;
 
-            let closest =
-                wall.start
-                    + wall_normal
-                        * projection;
+                let projection =
+                    to_player.dot(
+                        wall_normal
+                    );
 
-            let distance =
-                (position - closest)
-                    .length();
+                if projection >= 0.0
+                    &&
+                    projection <= wall_length
+                {
 
-            if distance < 10.0 {
-                return false;
+                    let closest =
+                        wall.start
+                            + wall_normal
+                                * projection;
+
+                    let distance =
+                        (position - closest)
+                            .length();
+
+                    if distance < 10.0 {
+                        return false;
+                    }
+                }
             }
         }
     }
@@ -1026,109 +1034,76 @@ fn collision_check(
     true
 }
 
+fn point_in_sector(
+    point: Vec2,
+    sector: &Sector,
+) -> bool {
+
+    let mut inside =
+        false;
+
+    let walls =
+        &sector.walls;
+
+    let count =
+        walls.len();
+
+    for i in 0..count {
+
+        let a =
+            walls[i].start;
+
+        let b =
+            walls[i].end;
+
+        let intersect =
+            ((a.y > point.y)
+                !=
+             (b.y > point.y))
+            &&
+            (
+                point.x
+                    <
+                (b.x - a.x)
+                    * (point.y - a.y)
+                    / ((b.y - a.y) + 0.0001)
+                    + a.x
+            );
+
+        if intersect {
+            inside = !inside;
+        }
+    }
+
+    inside
+}
+
 // ============================================================================
-// RENDER WORLD
+// WORLD RENDER
 // ============================================================================
 
 fn render_world(
     frame: &mut [u8],
     player: &Player,
     map: &Map,
-    texture_n: &Texture,
-    texture_s: &Texture,
-    texture_e: &Texture,
-    texture_w: &Texture,
-    texture_u: &Texture,
-    texture_d: &Texture,
+    textures: &HashMap<String, Texture>,
 ) {
 
-    for y in 0..HEIGHT as usize {
+    // ========================================================================
+    // CLEAR FRAME
+    // ========================================================================
 
-        let ray_angle_step =
-            FOV / WIDTH as f32;
+    for pixel in frame.chunks_exact_mut(4) {
 
-        let p =
-            y as f32 - HEIGHT as f32 / 2.0
-                - player.pitch;
-
-        // FLOOR + CEILING CASTING
-
-        if p.abs() > 0.1 {
-
-            let row_distance =
-                (HEIGHT as f32 / 2.0) / p.abs();
-
-            for x in 0..WIDTH as usize {
-
-                let ray_angle =
-                    player.angle
-                        - FOV / 2.0
-                        + x as f32 * ray_angle_step;
-
-                let ray_dir =
-                    Vec2::new(
-                        ray_angle.cos(),
-                        ray_angle.sin(),
-                    );
-
-                let world_x =
-                    player.position.x
-                        + ray_dir.x
-                            * row_distance
-                            * 64.0;
-
-                let world_y =
-                    player.position.y
-                        + ray_dir.y
-                            * row_distance
-                            * 64.0;
-
-                let tex_x =
-                    world_x as usize % TEXTURE_SIZE;
-
-                let tex_y =
-                    world_y as usize % TEXTURE_SIZE;
-
-                let idx =
-                    (y * WIDTH as usize + x)
-                        * 4;
-
-                // FLOOR
-
-                if y > HEIGHT as usize / 2 {
-
-                    let color =
-                        texture_d.sample(
-                            tex_x,
-                            tex_y,
-                        );
-
-                    frame[idx] = color[0];
-                    frame[idx + 1] = color[1];
-                    frame[idx + 2] = color[2];
-                    frame[idx + 3] = 255;
-                }
-
-                // CEILING
-
-                else {
-
-                    let color =
-                        texture_u.sample(
-                            tex_x,
-                            tex_y,
-                        );
-
-                    frame[idx] = color[0];
-                    frame[idx + 1] = color[1];
-                    frame[idx + 2] = color[2];
-                    frame[idx + 3] = 255;
-                }
-            }
-        }
+        pixel[0] = 0;
+        pixel[1] = 0;
+        pixel[2] = 0;
+        pixel[3] = 255;
     }
 
-    // WALL RENDERING
+    // ========================================================================
+    // COLUMN RENDERER
+    // ========================================================================
 
     for x in 0..WIDTH as usize {
 
@@ -1145,66 +1120,97 @@ fn render_world(
             );
 
         let mut closest_distance =
-            999999.0;
+            f32::MAX;
 
-        let mut hit_texture =
-            texture_n;
+        let mut hit_wall: Option<&Wall> =
+            None;
 
-        let mut hit_u = 0.0;
+        let mut hit_sector: Option<&Sector> =
+            None;
 
-        for wall in &map.walls {
+        let mut hit_point =
+            Vec2::ZERO;
 
-            if let Some((distance, hit_point)) =
-                raycast_wall(
-                    player.position,
-                    ray_dir,
-                    wall,
-                )
-            {
+        // ====================================================================
+        // FIND CLOSEST WALL
+        // ====================================================================
 
-                if distance
-                    < closest_distance
+        for sector in &map.sectors {
+
+            for wall in &sector.walls {
+
+                if let Some((distance, point))
+                    =
+                    raycast_wall(
+                        player.position,
+                        ray_dir,
+                        wall,
+                    )
                 {
 
-                    closest_distance =
-                        distance;
+                    match &wall.wall_type {
 
-                    let dx =
-                       (wall.end.x - wall.start.x).abs();
+    WallType::Solid => {
 
-                    let dy =
-                       (wall.end.y - wall.start.y).abs();
+        if distance < closest_distance {
 
-                    if dx > dy {
+            closest_distance =
+                distance;
 
-                        hit_u = hit_point.x;
+            hit_wall =
+                Some(wall);
 
-                    } else {
+            hit_sector =
+                Some(sector);
 
-                        hit_u = hit_point.y;
-                    }
+            hit_point =
+                point;
+        }
+    }
 
-                    hit_texture =
-                        match wall.texture.as_str() {
+ WallType::Portal(_) => {
 
-                            "textureN" =>
-                                texture_n,
+    // IMPORTANT:
+    // Portal walls are invisible and non-blocking.
+    // We do NOT terminate the ray here.
+    // Instead the ray continues naturally
+    // until it hits a real solid wall.
 
-                            "textureS" =>
-                                texture_s,
+    continue;
+}
 
-                            "textureE" =>
-                                texture_e,
-
-                            "textureW" =>
-                                texture_w,
-
-                            _ =>
-                                texture_n,
-                        };
+}
                 }
             }
         }
+
+        // ====================================================================
+        // NO HIT
+        // ====================================================================
+
+        if hit_wall.is_none() {
+            continue;
+        }
+
+        let wall =
+            hit_wall.unwrap();
+
+        let sector =
+            hit_sector.unwrap();
+
+        // ====================================================================
+        // TEXTURES
+        // ====================================================================
+
+    let wall_texture =
+    textures
+        .get(&wall.texture)
+        .or_else(|| textures.get("textureN"))
+        .unwrap();
+        
+        // ====================================================================
+        // WALL PROJECTION
+        // ====================================================================
 
         let corrected_distance =
             closest_distance
@@ -1227,31 +1233,241 @@ fn render_world(
                 + player.pitch)
                 as i32;
 
-        // PROPER WALL TILING
+        // ====================================================================
+        // WALL TILING
+        // ====================================================================
+
+        let dx =
+            (wall.end.x - wall.start.x).abs();
+
+        let dy =
+            (wall.end.y - wall.start.y).abs();
+
+        let hit_u =
+            if dx > dy {
+                hit_point.x
+            } else {
+                hit_point.y
+            };
 
         let texture_x =
             hit_u.abs() as usize
-            % TEXTURE_SIZE;
+                % TEXTURE_SIZE;
 
-        for y in wall_top..wall_bottom {
+        // ====================================================================
+        // CEILING
+        // ====================================================================
 
-            if y < 0 || y >= HEIGHT as i32 {
+        for y in 0..wall_top {
+
+            if y < 0
+                || y >= HEIGHT as i32
+            {
                 continue;
             }
 
-            let wall_y =
-                y as f32 - wall_top as f32;
+            let p =
+                y as f32
+                    - HEIGHT as f32 / 2.0
+                    - player.pitch;
 
-            let texture_y =
-                ((wall_y / wall_height)
-               * TEXTURE_SIZE as f32)
-               .clamp(0.0, 63.0)
-                as usize;
+            if p.abs() < 0.1 {
+                continue;
+            }
+
+            let row_distance =
+                (HEIGHT as f32 / 2.0)
+                    / p.abs();
+
+            let world_x =
+                player.position.x
+                    + ray_dir.x
+                        * row_distance
+                        * 64.0;
+
+            let world_y =
+                player.position.y
+                    + ray_dir.y
+                        * row_distance
+                        * 64.0;
+
+            let tex_x =
+                world_x.abs() as usize
+                    % TEXTURE_SIZE;
+
+            let tex_y =
+                world_y.abs() as usize
+                    % TEXTURE_SIZE;
+
+            let mut active_sector =
+    sector;
+
+for test_sector in &map.sectors {
+
+    if point_in_sector(
+        Vec2::new(
+            world_x,
+            world_y,
+        ),
+        test_sector,
+    ) {
+
+        active_sector =
+            test_sector;
+
+        break;
+    }
+}
+
+let ceiling_texture =
+    textures
+        .get(&active_sector.ceiling_texture)
+        .or_else(|| textures.get("textureU"))
+        .unwrap();
 
             let color =
-                hit_texture.sample(
-                    texture_x,
-                    texture_y,
+                ceiling_texture.sample(
+                    tex_x,
+                    tex_y,
+                );
+
+            let idx =
+                ((y as usize * WIDTH as usize)
+                    + x)
+                    * 4;
+
+            frame[idx] = color[0];
+            frame[idx + 1] = color[1];
+            frame[idx + 2] = color[2];
+            frame[idx + 3] = 255;
+        }
+
+        // ====================================================================
+        // WALL
+        // ====================================================================
+
+        match wall.wall_type {
+
+            WallType::Solid => {
+
+                for y in wall_top..wall_bottom {
+
+                    if y < 0
+                        || y >= HEIGHT as i32
+                    {
+                        continue;
+                    }
+
+                    let wall_y =
+                        y as f32
+                            - wall_top as f32;
+
+                    let texture_y =
+                        ((wall_y / wall_height)
+                            * TEXTURE_SIZE as f32)
+                            .clamp(0.0, 63.0)
+                            as usize;
+
+                    let color =
+                        wall_texture.sample(
+                            texture_x,
+                            texture_y,
+                        );
+
+                    let idx =
+                        ((y as usize * WIDTH as usize)
+                            + x)
+                            * 4;
+
+                    frame[idx] = color[0];
+                    frame[idx + 1] = color[1];
+                    frame[idx + 2] = color[2];
+                    frame[idx + 3] = 255;
+                }
+            }
+
+            // ================================================================
+            // PORTALS DO NOT RENDER WALLS
+            // ================================================================
+
+            WallType::Portal(_) => {}
+        }
+
+        // ====================================================================
+        // FLOOR
+        // ====================================================================
+
+        for y in wall_bottom..HEIGHT as i32 {
+
+            if y < 0
+                || y >= HEIGHT as i32
+            {
+                continue;
+            }
+
+            let p =
+                y as f32
+                    - HEIGHT as f32 / 2.0
+                    - player.pitch;
+
+            if p.abs() < 0.1 {
+                continue;
+            }
+
+            let row_distance =
+                (HEIGHT as f32 / 2.0)
+                    / p.abs();
+
+            let world_x =
+                player.position.x
+                    + ray_dir.x
+                        * row_distance
+                        * 64.0;
+
+            let world_y =
+                player.position.y
+                    + ray_dir.y
+                        * row_distance
+                        * 64.0;
+
+            let tex_x =
+                world_x.abs() as usize
+                    % TEXTURE_SIZE;
+
+            let tex_y =
+                world_y.abs() as usize
+                    % TEXTURE_SIZE;
+            
+            let mut active_sector =
+    sector;
+
+for test_sector in &map.sectors {
+
+    if point_in_sector(
+        Vec2::new(
+            world_x,
+            world_y,
+        ),
+        test_sector,
+    ) {
+
+        active_sector =
+            test_sector;
+
+        break;
+    }
+}
+
+let floor_texture =
+    textures
+        .get(&active_sector.floor_texture)
+        .or_else(|| textures.get("textureD"))
+        .unwrap();
+
+            let color =
+                floor_texture.sample(
+                    tex_x,
+                    tex_y,
                 );
 
             let idx =
@@ -1266,10 +1482,6 @@ fn render_world(
         }
     }
 }
-
-// ============================================================================
-// RAYCAST
-// ============================================================================
 
 fn raycast_wall(
     origin: Vec2,

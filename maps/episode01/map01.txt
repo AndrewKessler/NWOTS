@@ -1,9 +1,59 @@
+# ============================================================================
+# MAIN ROOM + NARROW PASSAGEWAY
+# ============================================================================
+
+# ============================================================================
+# MAIN ROOM
+# 512 x 512
+# ============================================================================
+
+sector main_room
+
 floor textureD
 ceiling textureU
 
-wall 0 0 512 0 textureN
-wall 512 0 512 512 textureE
-wall 512 512 0 512 textureS
-wall 0 512 0 0 textureW
+# TOP WALL
+wall 0 0 512 0 textureN solid
+
+# RIGHT UPPER WALL
+wall 512 0 512 192 textureE solid
+
+# RIGHT LOWER WALL
+wall 512 320 512 512 textureE solid
+
+# BOTTOM WALL
+wall 512 512 0 512 textureS solid
+
+# LEFT WALL
+wall 0 512 0 0 textureW solid
+
+# PORTAL OPENING
+portal 512 192 512 320 passageway
+
+# ============================================================================
+# PASSAGEWAY
+# 256 wide x 128 high
+# ============================================================================
+
+sector passageway
+
+floor metalfloor
+ceiling metalroof
+
+# TOP WALL
+wall 512 192 768 192 textureN solid
+
+# RIGHT WALL
+wall 768 192 768 320 textureE solid
+
+# BOTTOM WALL
+wall 768 320 512 320 textureS solid
+
+# PORTAL BACK TO MAIN ROOM
+portal 512 192 512 320 main_room
+
+# ============================================================================
+# PLAYER SPAWN
+# ============================================================================
 
 spawn 256 256 0
