@@ -1,0 +1,11 @@
+textureN = assets/textures/textureN.png
+textureS = assets/textures/textureS.png
+textureE = assets/textures/textureE.png
+textureW = assets/textures/textureW.png
+brickwall = assets/textures/brickwall.png
+
+textureD = assets/textures/textureD.png
+textureU = assets/textures/textureU.png
+
+metalfloor = assets/textures/metalfloor.png
+metalroof = assets/textures/metalroof.png

@@ -1,59 +1,57 @@
-# ============================================================================
-# MAIN ROOM + NARROW PASSAGEWAY
-# ============================================================================
-
-# ============================================================================
-# MAIN ROOM
-# 512 x 512
-# ============================================================================
-
-sector main_room
-
-floor textureD
-ceiling textureU
-
-# TOP WALL
-wall 0 0 512 0 textureN solid
-
-# RIGHT UPPER WALL
-wall 512 0 512 192 textureE solid
-
-# RIGHT LOWER WALL
-wall 512 320 512 512 textureE solid
-
-# BOTTOM WALL
-wall 512 512 0 512 textureS solid
-
-# LEFT WALL
-wall 0 512 0 0 textureW solid
-
-# PORTAL OPENING
-portal 512 192 512 320 passageway
-
-# ============================================================================
-# PASSAGEWAY
-# 256 wide x 128 high
-# ============================================================================
-
-sector passageway
+sector sector_0
 
 floor metalfloor
 ceiling metalroof
 
-# TOP WALL
-wall 512 192 768 192 textureN solid
+wall 64 64 512 64 textureN solid
+wall 64 128 64 64 textureN solid
+wall 64 192 64 128 textureN solid
+wall 64 256 64 192 textureN solid
+wall 128 320 64 320 brickwall solid
+wall 64 320 64 256 textureN solid
+wall 192 320 128 320 brickwall solid
+wall 256 320 192 320 brickwall solid
+portal 512 64 512 320 sector_1 
+wall 320 320 256 320 brickwall solid
+wall 384 320 320 320 brickwall solid
+wall 448 320 384 320 brickwall solid
+wall 512 320 448 320 brickwall solid
 
-# RIGHT WALL
-wall 768 192 768 320 textureE solid
+sector sector_1
 
-# BOTTOM WALL
-wall 768 320 512 320 textureS solid
+floor textureD
+ceiling textureU
 
-# PORTAL BACK TO MAIN ROOM
-portal 512 192 512 320 main_room
+wall 512 64 2112 64 textureN solid
+portal 512 128 512 64 sector_0 
+portal 512 192 512 128 sector_0 
+portal 512 256 512 192 sector_0 
+wall 576 320 512 320 brickwall solid
+portal 512 320 512 256 sector_0 
+wall 640 320 576 320 brickwall solid
+wall 704 320 640 320 brickwall solid
+wall 768 320 704 320 brickwall solid
+wall 832 320 768 320 brickwall solid
+wall 896 320 832 320 brickwall solid
+wall 960 320 896 320 brickwall solid
+wall 1024 320 960 320 brickwall solid
+wall 1088 320 1024 320 brickwall solid
+wall 1152 320 1088 320 brickwall solid
+wall 1216 320 1152 320 brickwall solid
+wall 1280 320 1216 320 brickwall solid
+wall 1344 320 1280 320 brickwall solid
+wall 1408 320 1344 320 brickwall solid
+wall 1472 320 1408 320 brickwall solid
+wall 1536 320 1472 320 brickwall solid
+wall 1600 320 1536 320 brickwall solid
+wall 1664 320 1600 320 brickwall solid
+wall 1728 320 1664 320 brickwall solid
+wall 1792 320 1728 320 brickwall solid
+wall 1856 320 1792 320 brickwall solid
+wall 2112 64 2112 320 brickwall solid
+wall 1920 320 1856 320 brickwall solid
+wall 1984 320 1920 320 brickwall solid
+wall 2048 320 1984 320 brickwall solid
+wall 2112 320 2048 320 brickwall solid
 
-# ============================================================================
-# PLAYER SPAWN
-# ============================================================================
-
-spawn 256 256 0
+spawn 288 160 0

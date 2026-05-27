@@ -201,6 +201,66 @@ impl Texture {
     }
 }
 
+fn load_texture_registry(
+    path: &str,
+) -> HashMap<String, Texture> {
+
+    let mut textures =
+        HashMap::new();
+
+    let content =
+        fs::read_to_string(path)
+            .unwrap();
+
+    let mut texture_count =
+        0usize;
+
+    for line in content.lines() {
+
+        let line =
+            line.trim();
+
+        if line.is_empty()
+            || line.starts_with("#")
+        {
+            continue;
+        }
+
+        let parts: Vec<&str> =
+            line.split('=')
+                .collect();
+
+        if parts.len() != 2 {
+            continue;
+        }
+
+        let name =
+            parts[0]
+                .trim()
+                .to_string();
+
+        let path =
+            parts[1]
+                .trim();
+
+        textures.insert(
+            name,
+            Texture::load(path),
+        );
+
+        texture_count += 1;
+
+        if texture_count >= 256 {
+
+            panic!(
+                "Texture limit exceeded (256)"
+            );
+        }
+    }
+
+    textures
+}
+
 // ============================================================================
 // FONT DRAWING
 // ============================================================================
@@ -489,64 +549,10 @@ fn main() {
             &config.menu.background
         );
 
-   let mut textures =
-    HashMap::new();
-
-textures.insert(
-    "textureN".to_string(),
-    Texture::load(
-        "assets/textures/textureN.png"
-    ),
-);
-
-textures.insert(
-    "textureS".to_string(),
-    Texture::load(
-        "assets/textures/textureS.png"
-    ),
-);
-
-textures.insert(
-    "textureE".to_string(),
-    Texture::load(
-        "assets/textures/textureE.png"
-    ),
-);
-
-textures.insert(
-    "textureW".to_string(),
-    Texture::load(
-        "assets/textures/textureW.png"
-    ),
-);
-
-textures.insert(
-    "textureU".to_string(),
-    Texture::load(
-        "assets/textures/textureU.png"
-    ),
-);
-
-textures.insert(
-    "textureD".to_string(),
-    Texture::load(
-        "assets/textures/textureD.png"
-    ),
-);
-
-textures.insert(
-    "metalfloor".to_string(),
-    Texture::load(
-        "assets/textures/metalfloor.png"
-    ),
-);
-
-textures.insert(
-    "metalroof".to_string(),
-    Texture::load(
-        "assets/textures/metalroof.png"
-    ),
-);
+  let textures =
+    load_texture_registry(
+        "config/textures.txt"
+    );
 
     let event_loop =
         EventLoop::new().unwrap();
