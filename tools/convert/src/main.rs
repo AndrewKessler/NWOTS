@@ -3,9 +3,10 @@ use std::env;
 use std::fs;
 
 const TILE_SIZE: i32 = 64;
+const DP_EPSILON: f32 = 64.0;
 
 // ============================================================================
-// DEFINITIONS
+// DATA TYPES
 // ============================================================================
 
 #[derive(Clone, Debug)]
@@ -25,18 +26,31 @@ struct SectorTile {
     y: usize,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+enum EdgeKind {
+    Wall(String),
+    Portal(usize),
+}
+
 #[derive(Clone, Debug)]
-struct WallSegment {
+struct Edge {
+    start: Point,
+    end: Point,
+    kind: EdgeKind,
+}
 
-    x1: i32,
-    y1: i32,
-
-    x2: i32,
-    y2: i32,
-
-    texture: String,
-
-    wall_type: String,
+#[derive(Clone, Debug)]
+struct Sector {
+    id: usize,
+    floor: String,
+    ceiling: String,
+    tiles: Vec<SectorTile>,
 }
 
 // ============================================================================
@@ -51,37 +65,25 @@ fn main() {
     if args.len() != 4 {
 
         eprintln!(
-            "Usage:\nconvert ascii2map source.txt map01.txt"
+            "Usage:\n\
+             cargo run -- ascii2map source.txt map01.txt"
         );
 
         return;
     }
 
-    let command =
-        &args[1];
-
-    let source =
-        &args[2];
-
-    let target =
-        &args[3];
-
-    match command.as_str() {
+    match args[1].as_str() {
 
         "ascii2map" => {
 
             convert_ascii_to_map(
-                source,
-                target,
+                &args[2],
+                &args[3],
             );
         }
 
         _ => {
-
-            eprintln!(
-                "Unknown command: {}",
-                command,
-            );
+            eprintln!("Unknown command");
         }
     }
 }
@@ -95,63 +97,171 @@ fn convert_ascii_to_map(
     target: &str,
 ) {
 
-    println!(
-        "Converting {} -> {}",
-        source,
-        target,
-    );
-
     let content =
         fs::read_to_string(source)
-            .expect("Failed to read source file");
+            .expect("Failed to read source");
 
-    let mut wall_defs:
-        HashMap<char, WallDefinition>
-        =
+    let (
+        wall_defs,
+        sector_defs,
+        map_lines,
+    ) = parse_ascii_file(&content);
+
+    let (
+        grid,
+        spawn_x,
+        spawn_y,
+    ) = build_grid(&map_lines);
+
+    let sectors =
+        flood_fill_sectors(
+            &grid,
+            &sector_defs,
+        );
+
+    let sector_lookup =
+        build_sector_lookup(&sectors);
+
+    let mut output =
+        String::new();
+
+    for sector in &sectors {
+
+        output.push_str(
+            &format!(
+                "sector sector_{}\n\n",
+                sector.id
+            )
+        );
+
+        output.push_str(
+            &format!(
+                "floor {}\n",
+                sector.floor
+            )
+        );
+
+        output.push_str(
+            &format!(
+                "ceiling {}\n\n",
+                sector.ceiling
+            )
+        );
+
+        let mut edges =
+            extract_sector_edges(
+                &grid,
+                sector,
+                &wall_defs,
+                &sector_lookup,
+            );
+
+        normalize_edges(
+            &mut edges
+        );
+
+        let contours =
+            trace_contours(edges);
+
+        let mut final_edges =
+            Vec::new();
+
+        for contour in contours {
+
+            let simplified =
+                simplify_contour_dp(
+                    contour,
+                    DP_EPSILON,
+                );
+
+            final_edges.extend(
+                simplified
+            );
+        }
+
+        normalize_edges(
+            &mut final_edges
+        );
+
+        let merged =
+            global_merge_collinear(
+                final_edges
+            );
+
+        write_edges(
+            merged,
+            &mut output,
+        );
+
+        output.push('\n');
+    }
+
+    output.push_str(
+        &format!(
+            "spawn {} {} 0\n",
+
+            spawn_x as i32 * TILE_SIZE
+                + TILE_SIZE / 2,
+
+            spawn_y as i32 * TILE_SIZE
+                + TILE_SIZE / 2,
+        )
+    );
+
+    fs::write(
+        target,
+        output,
+    )
+    .expect("Failed to write map");
+
+    println!("Conversion complete.");
+}
+
+// ============================================================================
+// ASCII PARSER
+// ============================================================================
+
+fn parse_ascii_file(
+    content: &str,
+)
+-> (
+    HashMap<char, WallDefinition>,
+    HashMap<char, SectorDefinition>,
+    Vec<String>,
+)
+{
+
+    let mut wall_defs =
         HashMap::new();
 
-    let mut sector_defs:
-        HashMap<char, SectorDefinition>
-        =
+    let mut sector_defs =
         HashMap::new();
 
     let mut map_lines =
         Vec::new();
 
-    let mut in_key =
-        false;
-
-    let mut in_map =
-        false;
+    let mut in_key = false;
+    let mut in_map = false;
 
     for raw_line in content.lines() {
 
         let line =
-            raw_line.trim();
+            raw_line.trim_end();
 
         if line.is_empty() {
             continue;
         }
 
         if line == "KEY" {
-
             in_key = true;
-            in_map = false;
-
             continue;
         }
 
         if line == "MAP" {
-
             in_key = false;
             in_map = true;
-
             continue;
         }
-
-        // ====================================================================
-        // KEY
-        // ====================================================================
 
         if in_key {
 
@@ -178,12 +288,6 @@ fn convert_ascii_to_map(
                 rhs.split_whitespace()
                     .collect();
 
-            if rhs_parts.is_empty() {
-                continue;
-            }
-
-            // WALL
-
             if rhs_parts[0] == "wall" {
 
                 wall_defs.insert(
@@ -191,15 +295,12 @@ fn convert_ascii_to_map(
                     symbol,
 
                     WallDefinition {
-
                         texture:
                             rhs_parts[1]
                                 .to_string(),
                     }
                 );
             }
-
-            // SECTOR
 
             else if rhs_parts[0] == "sector" {
 
@@ -221,10 +322,6 @@ fn convert_ascii_to_map(
             }
         }
 
-        // ====================================================================
-        // MAP
-        // ====================================================================
-
         else if in_map {
 
             map_lines.push(
@@ -233,17 +330,36 @@ fn convert_ascii_to_map(
         }
     }
 
-    // ========================================================================
-    // GRID
-    // ========================================================================
+    (
+        wall_defs,
+        sector_defs,
+        map_lines,
+    )
+}
+
+// ============================================================================
+// GRID
+// ============================================================================
+
+fn build_grid(
+    map_lines: &Vec<String>,
+)
+-> (
+    Vec<Vec<char>>,
+    usize,
+    usize,
+)
+{
 
     let height =
         map_lines.len();
 
     let width =
-        map_lines[0]
-            .chars()
-            .count();
+        map_lines
+            .iter()
+            .map(|l| l.len())
+            .max()
+            .unwrap();
 
     let mut grid =
         vec![
@@ -251,11 +367,8 @@ fn convert_ascii_to_map(
             height
         ];
 
-    let mut spawn_x =
-        0usize;
-
-    let mut spawn_y =
-        0usize;
+    let mut spawn_x = 0;
+    let mut spawn_y = 0;
 
     for (y, line)
         in map_lines.iter().enumerate()
@@ -277,9 +390,29 @@ fn convert_ascii_to_map(
         }
     }
 
-    // ========================================================================
-    // FLOOD FILL SECTORS
-    // ========================================================================
+    (
+        grid,
+        spawn_x,
+        spawn_y,
+    )
+}
+
+// ============================================================================
+// FLOOD FILL
+// ============================================================================
+
+fn flood_fill_sectors(
+    grid: &Vec<Vec<char>>,
+    sector_defs: &HashMap<char, SectorDefinition>,
+)
+-> Vec<Sector>
+{
+
+    let height =
+        grid.len();
+
+    let width =
+        grid[0].len();
 
     let mut visited =
         vec![
@@ -290,7 +423,7 @@ fn convert_ascii_to_map(
     let mut sectors =
         Vec::new();
 
-    let mut sector_index =
+    let mut sector_id =
         0usize;
 
     for y in 0..height {
@@ -308,9 +441,6 @@ fn convert_ascii_to_map(
                 continue;
             }
 
-            let sector_symbol =
-                ch;
-
             let mut queue =
                 VecDeque::new();
 
@@ -327,7 +457,6 @@ fn convert_ascii_to_map(
             {
 
                 tiles.push(
-
                     SectorTile {
                         x: cx,
                         y: cy,
@@ -347,9 +476,7 @@ fn convert_ascii_to_map(
                     in neighbors
                 {
 
-                    if nx < 0
-                        || ny < 0
-                    {
+                    if nx < 0 || ny < 0 {
                         continue;
                     }
 
@@ -369,9 +496,7 @@ fn convert_ascii_to_map(
                         continue;
                     }
 
-                    if grid[ny][nx]
-                        != sector_symbol
-                    {
+                    if grid[ny][nx] != ch {
                         continue;
                     }
 
@@ -381,258 +506,206 @@ fn convert_ascii_to_map(
                 }
             }
 
-            sectors.push((
-                sector_index,
-                sector_symbol,
-                tiles,
-            ));
+            let def =
+                sector_defs
+                    .get(&ch)
+                    .unwrap();
 
-            sector_index += 1;
+            sectors.push(
+                Sector {
+
+                    id: sector_id,
+
+                    floor:
+                        def.floor.clone(),
+
+                    ceiling:
+                        def.ceiling.clone(),
+
+                    tiles,
+                }
+            );
+
+            sector_id += 1;
         }
     }
 
-    println!(
-        "Discovered {} sectors",
-        sectors.len(),
-    );
-
-    // ========================================================================
-    // SECTOR LOOKUP
-    // ========================================================================
-
-    let mut sector_lookup:
-        HashMap<(usize, usize), usize>
-        =
-        HashMap::new();
-
-    for (
-        sector_id,
-        _sector_symbol,
-        tiles,
-    )
-        in &sectors
-    {
-
-        for tile in tiles {
-
-            sector_lookup.insert(
-                (tile.x, tile.y),
-                *sector_id,
-            );
-        }
-    }
-
-    // ========================================================================
-    // OUTPUT
-    // ========================================================================
-
-    let mut output =
-        String::new();
-
-    for (
-        sector_id,
-        sector_symbol,
-        tiles,
-    )
-        in &sectors
-    {
-
-        let sector_def =
-            sector_defs
-                .get(sector_symbol)
-                .unwrap();
-
-        output.push_str(
-
-            &format!(
-                "sector sector_{}\n\n",
-                sector_id,
-            )
-        );
-
-        output.push_str(
-
-            &format!(
-                "floor {}\n",
-                sector_def.floor,
-            )
-        );
-
-        output.push_str(
-
-            &format!(
-                "ceiling {}\n\n",
-                sector_def.ceiling,
-            )
-        );
-
-        let tile_set:
-            HashSet<(usize, usize)>
-            =
-            tiles
-                .iter()
-                .map(|t| (t.x, t.y))
-                .collect();
-
-        let mut raw_walls:
-            Vec<WallSegment>
-            =
-            Vec::new();
-
-        for tile in tiles {
-
-            let tx =
-                tile.x as i32;
-
-            let ty =
-                tile.y as i32;
-
-            let world_x =
-                tx * TILE_SIZE;
-
-            let world_y =
-                ty * TILE_SIZE;
-
-            extract_wall(
-                &grid,
-                &tile_set,
-                &wall_defs,
-                &sector_lookup,
-                *sector_id,
-                tx,
-                ty - 1,
-                world_x,
-                world_y,
-                world_x + TILE_SIZE,
-                world_y,
-                &mut raw_walls,
-            );
-
-            extract_wall(
-                &grid,
-                &tile_set,
-                &wall_defs,
-                &sector_lookup,
-                *sector_id,
-                tx,
-                ty + 1,
-                world_x + TILE_SIZE,
-                world_y + TILE_SIZE,
-                world_x,
-                world_y + TILE_SIZE,
-                &mut raw_walls,
-            );
-
-            extract_wall(
-                &grid,
-                &tile_set,
-                &wall_defs,
-                &sector_lookup,
-                *sector_id,
-                tx - 1,
-                ty,
-                world_x,
-                world_y + TILE_SIZE,
-                world_x,
-                world_y,
-                &mut raw_walls,
-            );
-
-            extract_wall(
-                &grid,
-                &tile_set,
-                &wall_defs,
-                &sector_lookup,
-                *sector_id,
-                tx + 1,
-                ty,
-                world_x + TILE_SIZE,
-                world_y,
-                world_x + TILE_SIZE,
-                world_y + TILE_SIZE,
-                &mut raw_walls,
-            );
-        }
-
-        let merged_walls =
-            merge_walls(raw_walls);
-
-        for wall in merged_walls {
-
-            output.push_str(
-
-                &format!(
-                    "{} {} {} {} {} {} {}\n",
-
-                    wall.wall_type,
-
-                    wall.x1,
-                    wall.y1,
-
-                    wall.x2,
-                    wall.y2,
-
-                    wall.texture,
-
-                    if wall.wall_type == "wall" {
-                        "solid"
-                    }
-                    else {
-                        ""
-                    }
-                )
-            );
-        }
-
-        output.push_str("\n");
-    }
-
-    output.push_str(
-
-        &format!(
-            "spawn {} {} 0\n",
-
-            spawn_x as i32 * TILE_SIZE
-                + TILE_SIZE / 2,
-
-            spawn_y as i32 * TILE_SIZE
-                + TILE_SIZE / 2,
-        )
-    );
-
-    fs::write(
-        target,
-        output,
-    )
-    .expect("Failed to write map");
-
-    println!("Conversion complete.");
+    sectors
 }
 
 // ============================================================================
-// EXTRACT WALL
+// LOOKUP
 // ============================================================================
 
-fn extract_wall(
+fn build_sector_lookup(
+    sectors: &Vec<Sector>,
+)
+-> HashMap<(usize, usize), usize>
+{
 
+    let mut lookup =
+        HashMap::new();
+
+    for sector in sectors {
+
+        for tile in &sector.tiles {
+
+            lookup.insert(
+                (tile.x, tile.y),
+                sector.id,
+            );
+        }
+    }
+
+    lookup
+}
+
+// ============================================================================
+// EDGE EXTRACTION
+// ============================================================================
+
+fn extract_sector_edges(
+    grid: &Vec<Vec<char>>,
+    sector: &Sector,
+    wall_defs: &HashMap<char, WallDefinition>,
+    sector_lookup: &HashMap<(usize, usize), usize>,
+)
+-> Vec<Edge>
+{
+
+    let mut edges =
+        Vec::new();
+
+    let tile_set:
+        HashSet<(usize, usize)>
+        =
+        sector.tiles
+            .iter()
+            .map(|t| (t.x, t.y))
+            .collect();
+
+    for tile in &sector.tiles {
+
+        let x =
+            tile.x as i32;
+
+        let y =
+            tile.y as i32;
+
+        let wx =
+            x * TILE_SIZE;
+
+        let wy =
+            y * TILE_SIZE;
+
+        add_edge(
+            &mut edges,
+            grid,
+            &tile_set,
+            wall_defs,
+            sector_lookup,
+            sector.id,
+
+            x,
+            y - 1,
+
+            Point { x: wx, y: wy },
+
+            Point {
+                x: wx + TILE_SIZE,
+                y: wy,
+            },
+        );
+
+        add_edge(
+            &mut edges,
+            grid,
+            &tile_set,
+            wall_defs,
+            sector_lookup,
+            sector.id,
+
+            x,
+            y + 1,
+
+            Point {
+                x: wx + TILE_SIZE,
+                y: wy + TILE_SIZE,
+            },
+
+            Point {
+                x: wx,
+                y: wy + TILE_SIZE,
+            },
+        );
+
+        add_edge(
+            &mut edges,
+            grid,
+            &tile_set,
+            wall_defs,
+            sector_lookup,
+            sector.id,
+
+            x - 1,
+            y,
+
+            Point {
+                x: wx,
+                y: wy + TILE_SIZE,
+            },
+
+            Point {
+                x: wx,
+                y: wy,
+            },
+        );
+
+        add_edge(
+            &mut edges,
+            grid,
+            &tile_set,
+            wall_defs,
+            sector_lookup,
+            sector.id,
+
+            x + 1,
+            y,
+
+            Point {
+                x: wx + TILE_SIZE,
+                y: wy,
+            },
+
+            Point {
+                x: wx + TILE_SIZE,
+                y: wy + TILE_SIZE,
+            },
+        );
+    }
+
+    edges
+}
+
+// ============================================================================
+// ADD EDGE
+// ============================================================================
+
+fn add_edge(
+    edges: &mut Vec<Edge>,
     grid: &Vec<Vec<char>>,
     tile_set: &HashSet<(usize, usize)>,
     wall_defs: &HashMap<char, WallDefinition>,
     sector_lookup: &HashMap<(usize, usize), usize>,
-
-    current_sector_id: usize,
+    sector_id: usize,
 
     nx: i32,
     ny: i32,
 
-    x1: i32,
-    y1: i32,
-
-    x2: i32,
-    y2: i32,
-
-    raw_walls: &mut Vec<WallSegment>,
-) {
+    start: Point,
+    end: Point,
+)
+{
 
     let width =
         grid[0].len() as i32;
@@ -661,68 +734,42 @@ fn extract_wall(
     let neighbor =
         grid[nyu][nxu];
 
-    // ========================================================================
-    // SOLID WALL
-    // ========================================================================
-
     if let Some(def)
         =
         wall_defs.get(&neighbor)
     {
 
-        raw_walls.push(
+        edges.push(
+            Edge {
 
-            WallSegment {
+                start,
+                end,
 
-                x1,
-                y1,
-
-                x2,
-                y2,
-
-                texture:
-                    def.texture.clone(),
-
-                wall_type:
-                    "wall".to_string(),
+                kind:
+                    EdgeKind::Wall(
+                        def.texture.clone()
+                    ),
             }
         );
-
-        return;
     }
 
-    // ========================================================================
-    // PORTAL
-    // ========================================================================
-
-    if let Some(other_sector_id)
+    else if let Some(other_sector)
         =
-        sector_lookup
-            .get(&(nxu, nyu))
+        sector_lookup.get(&(nxu, nyu))
     {
 
-        if *other_sector_id
-            != current_sector_id
-        {
+        if *other_sector != sector_id {
 
-            raw_walls.push(
+            edges.push(
+                Edge {
 
-                WallSegment {
+                    start,
+                    end,
 
-                    x1,
-                    y1,
-
-                    x2,
-                    y2,
-
-                    texture:
-                        format!(
-                            "sector_{}",
-                            other_sector_id,
+                    kind:
+                        EdgeKind::Portal(
+                            *other_sector
                         ),
-
-                    wall_type:
-                        "portal".to_string(),
                 }
             );
         }
@@ -730,13 +777,374 @@ fn extract_wall(
 }
 
 // ============================================================================
-// MERGE WALLS
+// NORMALIZE
 // ============================================================================
 
-fn merge_walls(
-    mut walls: Vec<WallSegment>
+fn normalize_edges(
+    edges: &mut Vec<Edge>
 )
--> Vec<WallSegment> {
+{
+
+    for edge in edges.iter_mut() {
+
+        if edge.start.x > edge.end.x {
+
+            std::mem::swap(
+                &mut edge.start,
+                &mut edge.end,
+            );
+        }
+
+        else if edge.start.x == edge.end.x {
+
+            if edge.start.y > edge.end.y {
+
+                std::mem::swap(
+                    &mut edge.start,
+                    &mut edge.end,
+                );
+            }
+        }
+    }
+}
+
+// ============================================================================
+// CONTOUR WALKER
+// ============================================================================
+
+fn trace_contours(
+    edges: Vec<Edge>,
+)
+-> Vec<Vec<Edge>>
+{
+
+    let mut adjacency:
+        HashMap<Point, Vec<usize>>
+        =
+        HashMap::new();
+
+    for (i, edge)
+        in edges.iter().enumerate()
+    {
+
+        adjacency
+            .entry(edge.start)
+            .or_default()
+            .push(i);
+
+        adjacency
+            .entry(edge.end)
+            .or_default()
+            .push(i);
+    }
+
+    let mut visited =
+        vec![false; edges.len()];
+
+    let mut contours:
+        Vec<Vec<Edge>>
+        =
+        Vec::new();
+
+    for start_index in 0..edges.len() {
+
+        if visited[start_index] {
+            continue;
+        }
+
+        let mut contour:
+            Vec<Edge>
+            =
+            Vec::new();
+
+        let mut current =
+            start_index;
+
+        loop {
+
+            if visited[current] {
+                break;
+            }
+
+            visited[current] = true;
+
+            let mut edge =
+                edges[current]
+                    .clone();
+
+            if let Some(last)
+                = contour.last()
+            {
+
+                if edge.start
+                    != last.end
+                {
+
+                    std::mem::swap(
+                        &mut edge.start,
+                        &mut edge.end,
+                    );
+                }
+            }
+
+            contour.push(
+                edge.clone()
+            );
+
+            let next_candidates =
+                adjacency
+                    .get(&edge.end);
+
+            let Some(candidates)
+                = next_candidates
+            else {
+                break;
+            };
+
+            let mut found =
+                None;
+
+            for candidate in candidates {
+
+                if visited[*candidate] {
+                    continue;
+                }
+
+                let next =
+                    &edges[*candidate];
+
+                if next.kind
+                    != edge.kind
+                {
+                    continue;
+                }
+
+                if next.start == edge.end
+                    ||
+                   next.end == edge.end
+                {
+                    found =
+                        Some(*candidate);
+
+                    break;
+                }
+            }
+
+            let Some(next_index)
+                = found
+            else {
+                break;
+            };
+
+            current =
+                next_index;
+        }
+
+        contours.push(contour);
+    }
+
+    contours
+}
+
+// ============================================================================
+// DOUGLAS PEUCKER
+// ============================================================================
+
+fn simplify_contour_dp(
+    contour: Vec<Edge>,
+    epsilon: f32,
+)
+-> Vec<Edge>
+{
+
+    if contour.len() <= 2 {
+        return contour;
+    }
+
+    let kind =
+        contour[0]
+            .kind
+            .clone();
+
+    let mut points =
+        Vec::new();
+
+    points.push(
+        contour[0]
+            .start
+    );
+
+    for edge in &contour {
+        points.push(edge.end);
+    }
+
+    let simplified =
+        douglas_peucker(
+            &points,
+            epsilon,
+        );
+
+    let mut result =
+        Vec::new();
+
+    for i in 0..simplified.len() - 1 {
+
+        result.push(
+            Edge {
+
+                start:
+                    simplified[i],
+
+                end:
+                    simplified[i + 1],
+
+                kind:
+                    kind.clone(),
+            }
+        );
+    }
+
+    result
+}
+
+fn douglas_peucker(
+    points: &[Point],
+    epsilon: f32,
+)
+-> Vec<Point>
+{
+
+    if points.len() < 3 {
+        return points.to_vec();
+    }
+
+    let first =
+        points[0];
+
+    let last =
+        points[points.len() - 1];
+
+    let mut max_distance =
+        0.0;
+
+    let mut index =
+        0usize;
+
+    for i in 1..points.len() - 1 {
+
+        let distance =
+            perpendicular_distance(
+                points[i],
+                first,
+                last,
+            );
+
+        if distance > max_distance {
+
+            max_distance =
+                distance;
+
+            index = i;
+        }
+    }
+
+    if max_distance > epsilon {
+
+        let mut left =
+            douglas_peucker(
+                &points[..=index],
+                epsilon,
+            );
+
+        let right =
+            douglas_peucker(
+                &points[index..],
+                epsilon,
+            );
+
+        left.pop();
+
+        left.extend(right);
+
+        left
+    }
+
+    else {
+
+        vec![
+            first,
+            last,
+        ]
+    }
+}
+
+fn perpendicular_distance(
+    point: Point,
+    line_start: Point,
+    line_end: Point,
+)
+-> f32
+{
+
+    let px =
+        point.x as f32;
+
+    let py =
+        point.y as f32;
+
+    let x1 =
+        line_start.x as f32;
+
+    let y1 =
+        line_start.y as f32;
+
+    let x2 =
+        line_end.x as f32;
+
+    let y2 =
+        line_end.y as f32;
+
+    let dx =
+        x2 - x1;
+
+    let dy =
+        y2 - y1;
+
+    if dx == 0.0
+        &&
+       dy == 0.0
+    {
+        return 0.0;
+    }
+
+    let numerator =
+        (
+            dy * px
+            -
+            dx * py
+            +
+            x2 * y1
+            -
+            y2 * x1
+        )
+        .abs();
+
+    let denominator =
+        (dx * dx + dy * dy)
+            .sqrt();
+
+    numerator / denominator
+}
+
+// ============================================================================
+// GLOBAL COLLINEAR MERGE
+// ============================================================================
+
+fn global_merge_collinear(
+    mut edges: Vec<Edge>,
+)
+-> Vec<Edge>
+{
 
     let mut changed =
         true;
@@ -745,92 +1153,153 @@ fn merge_walls(
 
         changed = false;
 
-        let mut merged =
+        let mut used =
+            vec![false; edges.len()];
+
+        let mut result =
             Vec::new();
 
-        let mut used =
-            vec![false; walls.len()];
-
-        for i in 0..walls.len() {
+        for i in 0..edges.len() {
 
             if used[i] {
                 continue;
             }
 
             let mut current =
-                walls[i].clone();
+                edges[i].clone();
 
-            for j in (i + 1)..walls.len() {
+            used[i] = true;
 
-                if used[j] {
-                    continue;
-                }
+            loop {
 
-                let other =
-                    &walls[j];
+                let mut merged =
+                    false;
 
-                if current.texture
-                    != other.texture
-                {
-                    continue;
-                }
+                for j in 0..edges.len() {
 
-                if current.wall_type
-                    != other.wall_type
-                {
-                    continue;
-                }
-
-                // ============================================================
-                // HORIZONTAL
-                // ============================================================
-
-                if current.y1 == current.y2
-                    &&
-                   other.y1 == other.y2
-                    &&
-                   current.y1 == other.y1
-                {
-
-                    if current.x2 == other.x1 {
-
-                        current.x2 =
-                            other.x2;
-
-                        used[j] = true;
-
-                        changed = true;
+                    if used[j] {
+                        continue;
                     }
+
+                    let candidate =
+                        &edges[j];
+
+                    if candidate.kind
+                        != current.kind
+                    {
+                        continue;
+                    }
+
+                    if current.end
+                        != candidate.start
+                    {
+                        continue;
+                    }
+
+                    let dx1 =
+                        current.end.x
+                        -
+                        current.start.x;
+
+                    let dy1 =
+                        current.end.y
+                        -
+                        current.start.y;
+
+                    let dx2 =
+                        candidate.end.x
+                        -
+                        candidate.start.x;
+
+                    let dy2 =
+                        candidate.end.y
+                        -
+                        candidate.start.y;
+
+                    let cross =
+                        dx1 * dy2
+                        -
+                        dy1 * dx2;
+
+                    if cross != 0 {
+                        continue;
+                    }
+
+                    current.end =
+                        candidate.end;
+
+                    used[j] = true;
+
+                    changed = true;
+
+                    merged = true;
+
+                    break;
                 }
 
-                // ============================================================
-                // VERTICAL
-                // ============================================================
-
-                else if current.x1 == current.x2
-                    &&
-                        other.x1 == other.x2
-                    &&
-                        current.x1 == other.x1
-                {
-
-                    if current.y2 == other.y1 {
-
-                        current.y2 =
-                            other.y2;
-
-                        used[j] = true;
-
-                        changed = true;
-                    }
+                if !merged {
+                    break;
                 }
             }
 
-            merged.push(current);
+            result.push(current);
         }
 
-        walls = merged;
+        edges = result;
     }
 
-    walls
+    edges
+}
+
+// ============================================================================
+// WRITE
+// ============================================================================
+
+fn write_edges(
+    edges: Vec<Edge>,
+    output: &mut String,
+)
+{
+
+    for edge in edges {
+
+        match edge.kind {
+
+            EdgeKind::Wall(texture) => {
+
+                output.push_str(
+
+                    &format!(
+                        "wall {} {} {} {} {} solid\n",
+
+                        edge.start.x,
+                        edge.start.y,
+
+                        edge.end.x,
+                        edge.end.y,
+
+                        texture,
+                    )
+                );
+            }
+
+            EdgeKind::Portal(sector) => {
+
+                output.push_str(
+
+                    &format!(
+                        "portal {} {} {} {} sector_{}\n",
+
+                        edge.start.x,
+                        edge.start.y,
+
+                        edge.end.x,
+                        edge.end.y,
+
+                        sector,
+                    )
+                );
+            }
+        }
+    }
 }
