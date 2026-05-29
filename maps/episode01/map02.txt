@@ -1,0 +1,20 @@
+sector sector_0
+
+floor floor
+ceiling roof
+
+wall 64 64 832 64 brickwall solid
+wall 832 64 832 448 brickwall solid
+wall 832 448 896 64 brickwall solid
+wall 896 64 1856 64 brickwall solid
+wall 1856 64 1856 320 brickwall solid
+wall 64 64 64 960 labwall solid
+wall 64 960 1280 960 labwall solid
+wall 1280 640 1280 960 labwall solid
+wall 1280 640 1344 960 labwall solid
+wall 1344 960 2752 960 labwall solid
+wall 2752 576 2752 960 labwall solid
+wall 1856 576 2752 576 labwall solid
+wall 1856 320 1856 576 labwall solid
+
+spawn 352 800 0
