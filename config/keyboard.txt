@@ -1,0 +1,9 @@
+forward=w
+backward=s
+left=a
+right=d
+run=shift
+menu=esc
+up=up
+down=down
+select=enter

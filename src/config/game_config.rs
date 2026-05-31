@@ -1,0 +1,26 @@
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
+pub struct GameConfig {
+    pub menu: MenuConfig,
+    pub episode: Vec<EpisodeConfig>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct MenuConfig {
+    pub font: String,
+    pub background: String,
+    pub exit_message: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct EpisodeConfig {
+    pub title: String,
+    pub maps: Vec<MapConfig>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct MapConfig {
+    pub title: String,
+    pub file: String,
+}

@@ -1,0 +1,20 @@
+[menu]
+font = "assets/fonts/vtks.ttf"
+background = "assets/menu/background.png"
+
+exit_message = "EXIT"
+
+[[episode]]
+title = "Minerva Base"
+
+[[episode.maps]]
+title = "Arrival"
+file = "maps/episode01/map01.txt"
+
+[[episode.maps]]
+title = "Reactor"
+file = "maps/episode01/map02.txt"
+
+[[episode.maps]]
+title = "Escape"
+file = "maps/episode01/map03.txt"
