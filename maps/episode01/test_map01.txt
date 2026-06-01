@@ -1,0 +1,11 @@
+sector sector_0
+
+floor metalfloor
+ceiling metalroof
+
+wall 64 64 2816 64 textureN solid
+wall 64 64 64 512 textureN solid
+wall 64 512 2048 512 brickwall solid
+wall 2048 512 2816 64 brickwall solid
+
+spawn 1760 224 0

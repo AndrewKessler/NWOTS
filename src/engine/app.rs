@@ -1,8 +1,11 @@
+use fontdue::Font;
 use std::collections::HashSet;
 use std::fs;
 use std::sync::Arc;
 
 use crate::engine::GameState;
+use crate::assets::Texture;
+use crate::render::render_menu;
 
 use pixels::{
     Pixels,
@@ -58,6 +61,24 @@ impl App {
                 "Failed to parse game.toml"
             );
 
+        let font_bytes =
+            fs::read(
+                &config.menu.font
+            )
+            .unwrap();
+
+        let menu_font =
+            Font::from_bytes(
+                font_bytes,
+                fontdue::FontSettings::default(),
+            )
+            .unwrap();
+
+let menu_background =
+    Texture::load(
+        &config.menu.background
+    );
+
         let textures =
             TextureRegistry::load(
                 "config/textures.txt"
@@ -89,6 +110,9 @@ impl App {
 
         let mut game_state =
             GameState::Menu;
+
+        let mut menu_index =
+            0usize;
 
         let event_loop =
             EventLoop::new()
@@ -171,30 +195,84 @@ impl App {
                                             keycode
                                         );
 
-                                        match keycode {
+                                        if game_state
+                                        ==
+                                        GameState::Menu
+                                        {
 
-                                            KeyCode::Enter => {
+                                            match keycode {
 
-                                                println!(
-                                                    "Entering game..."
-                                                );
+                                                KeyCode::ArrowUp => {
 
-                                                game_state =
-                                                    GameState::Playing;
-                                            }
+                                                    if menu_index > 0 {
 
-                                            KeyCode::Escape => {
+                                                        menu_index -= 1;
+                                                    }
+                                                }
 
-                                                println!(
-                                                    "Returning to menu..."
-                                                );
+                                                KeyCode::ArrowDown => {
 
-                                                game_state =
-                                                    GameState::Menu;
-                                            }
+                                                    if menu_index < 3 {
 
-                                            _ => {}
-                                        }
+                                                        menu_index += 1;
+                                                    }
+                                                }
+
+                                                KeyCode::Enter => {
+
+                                                    match menu_index {
+
+                                                        0 => {
+
+                                                            println!(
+                                                                "Starting game..."
+                                                            );
+
+                                                            game_state =
+                                                                GameState::Playing;
+                                                        }
+
+                                                        1 => {
+
+                                                            println!(
+                                                                "Save Game placeholder"
+                                                            );
+                                                        }
+
+                                                        2 => {
+
+                                                            println!(
+                                                                "Load Game placeholder"
+                                                            );
+                                                        }
+
+                                                        3 => {
+
+                                                            game_state =
+                                                                GameState::Exit;
+                                                        }
+
+                                                        _ => {}
+                                                    }
+                                                }
+
+        _ => {}
+    }
+}
+
+else {
+
+    match keycode {
+
+        KeyCode::Escape => {
+
+            game_state =
+                GameState::Menu;
+        }
+
+        _ => {}
+    }
+}
                                     }
 
                                     ElementState::Released => {
@@ -256,15 +334,14 @@ impl App {
 
                                 GameState::Menu => {
 
-                                    for pixel in
-                                        frame.chunks_exact_mut(4)
-                                    {
-                                        pixel[0] = 32;
-                                        pixel[1] = 32;
-                                        pixel[2] = 64;
-                                        pixel[3] = 255;
-                                    }
-                                }
+                            render_menu(
+                                frame,
+                                &menu_background,
+                                &menu_font,
+                                &config,
+                                menu_index,
+                            );
+                        }
 
                                 GameState::Playing => {
 

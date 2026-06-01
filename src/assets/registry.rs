@@ -50,10 +50,16 @@ impl TextureRegistry {
                 parts[1]
                     .trim();
 
-            textures.insert(
-                name,
-                Texture::load(texture_path),
+            println!(
+            "Loading texture: {} -> {}",
+            name,
+            texture_path
             );
+
+textures.insert(
+    name,
+    Texture::load(texture_path),
+);
 
             texture_count += 1;
 

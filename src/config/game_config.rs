@@ -10,6 +10,10 @@ pub struct GameConfig {
 pub struct MenuConfig {
     pub font: String,
     pub background: String,
+
+    pub start_message: String,
+    pub save_message: String,
+    pub load_message: String,
     pub exit_message: String,
 }
 

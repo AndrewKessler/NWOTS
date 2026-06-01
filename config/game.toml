@@ -1,7 +1,10 @@
 [menu]
-font = "assets/fonts/vtks.ttf"
+font = "assets/fonts/scigoth.ttf"
 background = "assets/menu/background.png"
 
+start_message = "Start Game"
+save_message = "Save Game"
+load_message = "Load Game"
 exit_message = "EXIT"
 
 [[episode]]

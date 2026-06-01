@@ -15,6 +15,10 @@ pub fn render_menu(
     menu_index: usize,
 ) {
 
+    // ============================================================
+    // BACKGROUND
+    // ============================================================
+
     for y in 0..HEIGHT as usize {
 
         for x in 0..WIDTH as usize {
@@ -33,40 +37,94 @@ pub fn render_menu(
         }
     }
 
+    // ============================================================
+    // TITLE
+    // ============================================================
+
     draw_text(
         frame,
         font,
-        "SELECT EPISODE",
-        120,
-        80,
-        40.0,
-        [255,255,0],
+        "NWOTS",
+        240,
+        40,
+        50.0,
+        [255, 255, 0],
     );
 
-    let title_color =
-        if menu_index == 0 {
-            [255,255,0]
-        }
-        else {
-            [255,255,255]
-        };
-
-    let exit_color =
-        if menu_index == 1 {
-            [255,255,0]
-        }
-        else {
-            [255,255,255]
-        };
+    // ============================================================
+    // EPISODE TITLE
+    // ============================================================
 
     draw_text(
         frame,
         font,
         &config.episode[0].title,
         180,
+        120,
+        36.0,
+        [255, 255, 255],
+    );
+
+    // ============================================================
+    // MENU ITEMS
+    // ============================================================
+
+    let start_color =
+        if menu_index == 0 {
+            [255,255,0]
+        } else {
+            [255,255,255]
+        };
+
+    let save_color =
+        if menu_index == 1 {
+            [255,255,0]
+        } else {
+            [255,255,255]
+        };
+
+    let load_color =
+        if menu_index == 2 {
+            [255,255,0]
+        } else {
+            [255,255,255]
+        };
+
+    let exit_color =
+        if menu_index == 3 {
+            [255,255,0]
+        } else {
+            [255,255,255]
+        };
+
+    draw_text(
+        frame,
+        font,
+        &config.menu.start_message,
+        180,
         220,
         30.0,
-        title_color,
+        start_color,
+    );
+
+    draw_text(
+        frame,
+        font,
+        &config.menu.save_message,
+        180,
+        270,
+        30.0,
+        save_color,
+    );
+
+    draw_text(
+        frame,
+        font,
+        &config.menu.load_message,
+        180,
+        320,
+        30.0,
+        load_color,
     );
 
     draw_text(
@@ -74,7 +132,7 @@ pub fn render_menu(
         font,
         &config.menu.exit_message,
         180,
-        280,
+        370,
         30.0,
         exit_color,
     );
