@@ -2,6 +2,7 @@ use std::fs;
 
 use glam::Vec2;
 
+use crate::sprites::SpriteInstance;
 use crate::world::{
     Map,
     Sector,
@@ -28,6 +29,9 @@ pub fn load_map(
 
     let mut spawn_angle =
         0.0;
+
+    let mut items =
+        Vec::<SpriteInstance>::new();
 
     for line in content.lines() {
 
@@ -169,6 +173,29 @@ pub fn load_map(
                     parts[3].parse().unwrap();
             }
 
+            "item" => {
+
+                            items.push(
+
+                                SpriteInstance {
+
+                                    sprite_id:
+                                        parts[1].to_string(),
+
+                                    position:
+                                        Vec2::new(
+                                            parts[2]
+                                                .parse()
+                                                .unwrap(),
+
+                                            parts[3]
+                                                .parse()
+                                                .unwrap(),
+                                        ),
+                                }
+                            );
+                        }
+
             _ => {}
         }
     }
@@ -180,8 +207,9 @@ pub fn load_map(
     }
 
     Map {
-        sectors,
-        spawn,
-        spawn_angle,
+    sectors,
+    spawn,
+    spawn_angle,
+    items,
     }
 }

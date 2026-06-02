@@ -28,7 +28,7 @@ pub fn render_world(
     player: &Player,
     map: &Map,
     textures: &HashMap<String, Texture>,
-) {
+) -> Vec<f32> {
 
     for pixel in frame.chunks_exact_mut(4) {
         pixel[0] = 0;
@@ -36,6 +36,12 @@ pub fn render_world(
         pixel[2] = 0;
         pixel[3] = 255;
     }
+
+    let mut zbuffer =
+    vec![
+        f32::MAX;
+        WIDTH as usize
+    ];
 
     for x in 0..WIDTH as usize {
 
@@ -121,6 +127,9 @@ pub fn render_world(
             closest_distance
                 * (player.angle - ray_angle)
                     .cos();
+
+        zbuffer[x] =
+            corrected_distance;
 
         let wall_height =
             (HEIGHT as f32 * 64.0)
@@ -370,6 +379,8 @@ pub fn render_world(
             frame[idx + 1] = color[1];
             frame[idx + 2] = color[2];
             frame[idx + 3] = 255;
-        }
+                }
     }
+
+    zbuffer
 }

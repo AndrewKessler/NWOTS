@@ -4,6 +4,8 @@ use std::fs;
 use std::sync::Arc;
 
 use crate::engine::GameState;
+use crate::sprites::SpriteRegistry;
+use crate::sprites::render_sprites;
 use crate::assets::Texture;
 use crate::render::render_menu;
 
@@ -85,6 +87,12 @@ let menu_background =
             TextureRegistry::load(
                 "config/textures.txt"
             );
+
+        let mut sprite_registry =
+            SpriteRegistry::new();
+
+            sprite_registry
+                .load_test_assets();
 
         let map =
             load_map(
@@ -414,11 +422,20 @@ let menu_background =
 
                         GameState::Playing => {
 
-                            render_world(
+                            let zbuffer =
+                                render_world(
+                                    frame,
+                                    &player,
+                                    &map,
+                                    &textures.textures,
+                                );
+
+                            render_sprites(
                                 frame,
                                 &player,
                                 &map,
-                                &textures.textures,
+                                &sprite_registry,
+                                &zbuffer,
                             );
                         }
 
