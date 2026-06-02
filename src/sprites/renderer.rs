@@ -1,7 +1,10 @@
 use glam::Vec2;
 
 use crate::assets::Texture;
-use crate::sprites::SpriteRegistry;
+use crate::sprites::{
+    SpriteDirection,
+    SpriteRegistry,
+};
 use crate::util::constants::{
     WIDTH,
     HEIGHT,
@@ -22,12 +25,22 @@ pub fn render_sprites(
 
     for item in &map.items {
 
-        let texture =
+        let definition =
             match registry.get(
                 &item.sprite_id
             ) {
 
-                Some(tex) => tex,
+                Some(def) => def,
+
+                None => continue,
+            };
+
+        let sprite_frame =
+            match definition.frames.get(
+                &SpriteDirection::F
+            ) {
+
+                Some(frame) => frame,
 
                 None => continue,
             };
@@ -36,7 +49,12 @@ pub fn render_sprites(
             frame,
             player,
             item.position,
-            texture,
+            &sprite_frame.image,
+            definition.height,
+            definition.scale_x,
+            definition.scale_y,
+            sprite_frame.offset_x,
+            sprite_frame.offset_y,
             zbuffer,
         );
     }
@@ -47,6 +65,11 @@ fn render_sprite(
     player: &Player,
     sprite_pos: Vec2,
     texture: &Texture,
+    world_height: f32,
+    scale_x: f32,
+    scale_y: f32,
+    offset_x: i32,
+    offset_y: i32,
     zbuffer: &[f32],
 ) {
 
@@ -99,25 +122,30 @@ fn render_sprite(
             * WIDTH as f32;
 
     let sprite_height =
-        (HEIGHT as f32 * 64.0)
-            / distance;
+        ((HEIGHT as f32
+            * world_height)
+            / distance)
+            * scale_y;
 
     let sprite_width =
-        sprite_height
+        (sprite_height
             * texture.width as f32
-            / texture.height as f32;
+            / texture.height as f32)
+            * scale_x;
 
     let left =
         (screen_x
             - sprite_width / 2.0)
-            as i32;
+            as i32
+            + offset_x;
 
     let top =
         ((HEIGHT as f32
             - sprite_height)
             / 2.0
             + player.pitch)
-            as i32;
+            as i32
+            + offset_y;
 
     for sx in 0..sprite_width as i32 {
 

@@ -1,0 +1,47 @@
+name = Colt
+
+radius = 8
+height = 8
+
+scale_x = 1.0
+scale_y = 1.0
+
+frame F
+image = coltF.png
+offset_x = 0
+offset_y = 0
+
+frame RF
+image = coltRF.png
+offset_x = 0
+offset_y = 0
+
+frame R
+image = coltR.png
+offset_x = 0
+offset_y = 0
+
+frame RB
+image = coltRB.png
+offset_x = 0
+offset_y = 0
+
+frame B
+image = coltB.png
+offset_x = 0
+offset_y = 0
+
+frame LB
+image = coltLB.png
+offset_x = 0
+offset_y = 0
+
+frame L
+image = coltL.png
+offset_x = 0
+offset_y = 0
+
+frame LF
+image = coltLF.png
+offset_x = 0
+offset_y = 0

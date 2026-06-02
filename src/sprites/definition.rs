@@ -6,10 +6,15 @@ use crate::sprites::{
 };
 
 pub struct SpriteDefinition {
+
     pub name: String,
 
-    pub default_scale_x: f32,
-    pub default_scale_y: f32,
+    pub radius: f32,
+
+    pub height: f32,
+
+    pub scale_x: f32,
+    pub scale_y: f32,
 
     pub frames:
         HashMap<

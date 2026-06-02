@@ -175,26 +175,40 @@ pub fn load_map(
 
             "item" => {
 
-                            items.push(
+                        let rotation =
+                            if parts.len() >= 5 {
 
-                                SpriteInstance {
+                                parts[4]
+                                    .parse()
+                                    .unwrap_or(0.0)
 
-                                    sprite_id:
-                                        parts[1].to_string(),
+                            } else {
 
-                                    position:
-                                        Vec2::new(
-                                            parts[2]
-                                                .parse()
-                                                .unwrap(),
+                                0.0
+                            };
 
-                                            parts[3]
-                                                .parse()
-                                                .unwrap(),
-                                        ),
-                                }
-                            );
-                        }
+                        items.push(
+
+                            SpriteInstance {
+
+                                sprite_id:
+                                    parts[1].to_string(),
+
+                                position:
+                                    Vec2::new(
+                                        parts[2]
+                                            .parse()
+                                            .unwrap(),
+
+                                        parts[3]
+                                            .parse()
+                                            .unwrap(),
+                                    ),
+
+                                rotation,
+                            }
+                        );
+                    }
 
             _ => {}
         }
