@@ -7,6 +7,7 @@ mod render;
 mod physics;
 mod input;
 mod util;
+mod sprites;
 
 use engine::App;
 
