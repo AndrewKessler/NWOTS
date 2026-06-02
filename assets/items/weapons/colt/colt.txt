@@ -1,7 +1,7 @@
 name = Colt
 
-radius = 8
-height = 8
+radius = 12
+height = 12
 
 scale_x = 1.0
 scale_y = 1.0

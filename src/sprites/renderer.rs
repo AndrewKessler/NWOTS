@@ -35,9 +35,25 @@ pub fn render_sprites(
                 None => continue,
             };
 
+        let dx =
+            player.position.x
+                - item.position.x;
+
+        let dy =
+            player.position.y
+                - item.position.y;
+
+        let angle =
+            dy.atan2(dx);
+
+        let direction =
+            SpriteDirection::from_angle(
+                angle
+            );
+
         let sprite_frame =
             match definition.frames.get(
-                &SpriteDirection::F
+                &direction
             ) {
 
                 Some(frame) => frame,
