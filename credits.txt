@@ -1,0 +1,7 @@
+<a href="https://www.flaticon.com/free-icons/origami" title="origami icons">Origami icons created by Freepik - Flaticon</a> used in HUD for health
+
+<a href="https://www.flaticon.com/free-icons/armor" title="armor icons">Armor icons created by Iconic Panda - Flaticon</a> used in HUD for armour
+
+<a href="https://www.flaticon.com/free-icons/pistol" title="pistol icons">Pistol icons created by Freepik - Flaticon</a> used in HUD for pistol
+
+<a href="https://www.flaticon.com/free-icons/ammo" title="ammo icons">Ammo icons created by Roundicons - Flaticon</a> used in HUD for ammo

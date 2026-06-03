@@ -8,6 +8,7 @@ mod physics;
 mod input;
 mod util;
 mod sprites;
+mod hud;
 
 use engine::App;
 

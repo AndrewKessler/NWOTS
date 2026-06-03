@@ -8,6 +8,7 @@ use crate::sprites::SpriteRegistry;
 use crate::sprites::render_sprites;
 use crate::assets::Texture;
 use crate::render::render_menu;
+use crate::hud::render_hud;
 
 use pixels::{
     Pixels,
@@ -94,6 +95,11 @@ let menu_background =
             sprite_registry
                 .load_test_assets();
 
+        let hud_texture =
+            Texture::load(
+                "assets/hud/default/hud.png"
+            );
+
         let map =
             load_map(
                 &config
@@ -103,17 +109,10 @@ let menu_background =
             );
 
         let mut player =
-            Player {
-
-                position:
-                    map.spawn,
-
-                angle:
-                    map.spawn_angle,
-
-                pitch:
-                    0.0,
-            };
+            Player::new(
+                map.spawn,
+                map.spawn_angle,
+            );
 
         let mut keys =
             HashSet::<KeyCode>::new();
@@ -436,6 +435,11 @@ let menu_background =
                                 &map,
                                 &sprite_registry,
                                 &zbuffer,
+                            );
+
+                            render_hud(
+                                frame,
+                                &hud_texture,
                             );
                         }
 
