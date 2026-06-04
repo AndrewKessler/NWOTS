@@ -1,49 +1,49 @@
-name = Colt
+name = Up Arrow
 
-radius = 12
-height = 12
+radius = 8
+height = 8
 
-ground_offset = -5
+ground_offset = -14
 
 scale_x = 1.0
 scale_y = 1.0
 
 frame F
-image = coltF.png
+image = uparrowF.png
 offset_x = 0
 offset_y = 0
 
 frame RF
-image = coltRF.png
+image = uparrowRF.png
 offset_x = 0
 offset_y = 0
 
 frame R
-image = coltR.png
+image = uparrowR.png
 offset_x = 0
 offset_y = 0
 
 frame RB
-image = coltRB.png
+image = uparrowRB.png
 offset_x = 0
 offset_y = 0
 
 frame B
-image = coltB.png
+image = uparrowB.png
 offset_x = 0
 offset_y = 0
 
 frame LB
-image = coltLB.png
+image = uparrowLB.png
 offset_x = 0
 offset_y = 0
 
 frame L
-image = coltL.png
+image = uparrowL.png
 offset_x = 0
 offset_y = 0
 
 frame LF
-image = coltLF.png
+image = uparrowLF.png
 offset_x = 0
 offset_y = 0

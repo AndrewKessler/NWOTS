@@ -40,6 +40,11 @@ impl SpriteRegistry {
             "colt",
             "assets/items/weapons/colt/colt.txt",
         );
+
+        self.load_sprite_definition(
+            "uparrow",
+            "assets/items/decorations/uparrow/uparrow.txt",
+        );
     }
 
     pub fn get(
