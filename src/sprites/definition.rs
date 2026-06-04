@@ -13,6 +13,8 @@ pub struct SpriteDefinition {
 
     pub height: f32,
 
+    pub ground_offset: f32,
+
     pub scale_x: f32,
     pub scale_y: f32,
 

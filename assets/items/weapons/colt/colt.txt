@@ -3,6 +3,8 @@ name = Colt
 radius = 12
 height = 12
 
+ground_offset = -10
+
 scale_x = 1.0
 scale_y = 1.0
 

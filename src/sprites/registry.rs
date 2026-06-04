@@ -79,6 +79,9 @@ impl SpriteRegistry {
         let mut height =
             16.0;
 
+        let mut ground_offset =
+            0.0;
+
         let mut scale_x =
             1.0;
 
@@ -145,6 +148,20 @@ impl SpriteRegistry {
                         .parse()
                         .unwrap();
             }
+
+            else if line.starts_with(
+                    "ground_offset"
+                ) {
+
+                    ground_offset =
+                        line
+                            .split('=')
+                            .nth(1)
+                            .unwrap()
+                            .trim()
+                            .parse()
+                            .unwrap();
+                }
 
             else if line.starts_with("scale_x") {
 
@@ -303,12 +320,15 @@ impl SpriteRegistry {
 
                 height,
 
+                ground_offset,
+
                 scale_x,
 
                 scale_y,
 
                 frames,
-            },
+            }
+
         );
     }
 }

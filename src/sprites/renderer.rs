@@ -61,18 +61,20 @@ pub fn render_sprites(
                 None => continue,
             };
 
-        render_sprite(
-            frame,
-            player,
-            item.position,
-            &sprite_frame.image,
-            definition.height,
-            definition.scale_x,
-            definition.scale_y,
-            sprite_frame.offset_x,
-            sprite_frame.offset_y,
-            zbuffer,
-        );
+            render_sprite(
+                frame,
+                player,
+                item.position,
+                &sprite_frame.image,
+                definition.height,
+                definition.ground_offset,
+                definition.scale_x,
+                definition.scale_y,
+                sprite_frame.offset_x,
+                sprite_frame.offset_y,
+                zbuffer,
+            );
+
     }
 }
 
@@ -82,6 +84,7 @@ fn render_sprite(
     sprite_pos: Vec2,
     texture: &Texture,
     world_height: f32,
+    ground_offset: f32,
     scale_x: f32,
     scale_y: f32,
     offset_x: i32,
@@ -155,11 +158,17 @@ fn render_sprite(
             as i32
             + offset_x;
 
+    let projected_ground_offset =
+    (ground_offset
+        / distance)
+        * HEIGHT as f32;
+
     let top =
         ((HEIGHT as f32
             - sprite_height)
             / 2.0
-            + player.pitch)
+            + player.pitch
+            - projected_ground_offset)
             as i32
             + offset_y;
 
