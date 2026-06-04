@@ -92,8 +92,10 @@ let menu_background =
         let mut sprite_registry =
             SpriteRegistry::new();
 
-            sprite_registry
-                .load_test_assets();
+        sprite_registry
+            .load_registry(
+                "config/items.txt"
+            );
 
         let hud_texture =
             Texture::load(

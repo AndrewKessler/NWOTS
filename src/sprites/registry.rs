@@ -32,20 +32,57 @@ impl SpriteRegistry {
         }
     }
 
-    pub fn load_test_assets(
-        &mut self,
-    ) {
+    pub fn load_registry(
+    &mut self,
+    path: &str,
+) {
+
+    println!(
+        "Loading item registry: {}",
+        path
+    );
+
+    let content =
+        fs::read_to_string(path)
+            .unwrap();
+
+    for line in content.lines() {
+
+        let line =
+            line.trim();
+
+        if line.is_empty() {
+            continue;
+        }
+
+        if line.starts_with('#') {
+            continue;
+        }
+
+        let parts:
+            Vec<&str> =
+                line
+                    .split('=')
+                    .collect();
+
+        if parts.len() != 2 {
+            continue;
+        }
+
+        let id =
+            parts[0]
+                .trim();
+
+        let definition_path =
+            parts[1]
+                .trim();
 
         self.load_sprite_definition(
-            "colt",
-            "assets/items/weapons/colt/colt.txt",
-        );
-
-        self.load_sprite_definition(
-            "uparrow",
-            "assets/items/decorations/uparrow/uparrow.txt",
+            id,
+            definition_path,
         );
     }
+}
 
     pub fn get(
         &self,
