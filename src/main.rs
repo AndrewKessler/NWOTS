@@ -9,6 +9,7 @@ mod input;
 mod util;
 mod sprites;
 mod hud;
+mod cutscene;
 
 use engine::App;
 

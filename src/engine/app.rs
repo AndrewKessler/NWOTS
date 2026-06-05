@@ -102,6 +102,39 @@ let menu_background =
                 "assets/hud/default/hud.png"
             );
 
+        let mut cutscene_player =
+
+        if let Some(
+            cutscene
+        ) =
+            &config.cutscene
+        {
+
+            if cutscene
+                .path
+                .trim()
+                .is_empty()
+            {
+
+                None
+
+            } else {
+
+                Some(
+
+                    crate::cutscene::
+                        CutscenePlayer::new(
+                            &cutscene.path,
+                            cutscene.fps,
+                        )
+                )
+            }
+
+        } else {
+
+            None
+        };
+
         let map =
             load_map(
                 &config
@@ -125,7 +158,10 @@ let menu_background =
             &config.cutscene
         {
 
-            if cutscene.file.is_empty()
+            if cutscene
+                .path
+                .trim()
+                .is_empty()
             {
 
                 GameState::Menu
@@ -446,6 +482,51 @@ let menu_background =
                             GameState::Cutscene => {
 
                                 frame.fill(0);
+
+                                if let Some(
+                                    cutscene
+                                ) =
+                                    &mut cutscene_player
+                                {
+
+                                    cutscene.update();
+
+                                    if cutscene.finished()
+                                    {
+
+                                        game_state =
+                                            GameState::Menu;
+                                    }
+
+                                    else if let Some(
+                                        path
+                                    ) =
+                                        cutscene.current_path()
+                                    {
+
+                                        let texture =
+                                            Texture::load(
+                                                path
+                                                    .to_str()
+                                                    .unwrap()
+                                            );
+
+                                        let copy_len =
+                                            frame.len()
+                                                .min(
+                                                    texture
+                                                        .data
+                                                        .len()
+                                                );
+
+                                        frame[..copy_len]
+                                            .copy_from_slice(
+                                                &texture.data[
+                                                    ..copy_len
+                                                ]
+                                            );
+                                    }
+                                }
                             }
 
                             GameState::Menu => {

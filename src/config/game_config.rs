@@ -16,7 +16,11 @@ pub struct GameConfig {
 #[derive(Debug, Deserialize)]
 pub struct CutsceneConfig {
 
-    pub file: String,
+    pub path: String,
+
+    pub fps: u32,
+
+    pub music: String,
 
     pub skippable: bool,
 }

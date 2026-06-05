@@ -1,6 +1,11 @@
 [cutscene]
 
-file = "assets/cutscenes/intro.mp4"
+path = "assets/cutscenes/intro"
+
+fps = 24
+
+music = ""
+
 skippable = true
 
 [menu]
