@@ -120,7 +120,25 @@ let menu_background =
             HashSet::<KeyCode>::new();
 
         let mut game_state =
-            GameState::Menu;
+
+        if let Some(cutscene) =
+            &config.cutscene
+        {
+
+            if cutscene.file.is_empty()
+            {
+
+                GameState::Menu
+
+            } else {
+
+                GameState::Cutscene
+            }
+
+        } else {
+
+            GameState::Menu
+        };
 
         let mut menu_index =
             0usize;
@@ -272,6 +290,21 @@ let menu_background =
 
                                 if game_state
                                     ==
+                                    GameState::Cutscene
+                                {
+
+                                    if keycode
+                                        ==
+                                        KeyCode::Space
+                                    {
+
+                                        game_state =
+                                            GameState::Menu;
+                                    }
+                                }
+
+                                if game_state
+                                    ==
                                     GameState::Menu
                                 {
 
@@ -410,7 +443,12 @@ let menu_background =
 
                     match game_state {
 
-                        GameState::Menu => {
+                            GameState::Cutscene => {
+
+                                frame.fill(0);
+                            }
+
+                            GameState::Menu => {
 
                             render_menu(
                                 frame,

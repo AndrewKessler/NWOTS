@@ -7,6 +7,8 @@
 )]
 pub enum GameState {
 
+    Cutscene,
+
     Menu,
 
     Playing,

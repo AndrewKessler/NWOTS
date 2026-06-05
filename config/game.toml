@@ -1,3 +1,8 @@
+[cutscene]
+
+file = "assets/cutscenes/intro.mp4"
+skippable = true
+
 [menu]
 font = "assets/fonts/scigoth.ttf"
 background = "assets/menu/background.png"
