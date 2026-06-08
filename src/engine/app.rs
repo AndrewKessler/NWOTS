@@ -102,6 +102,11 @@ let menu_background =
                 "assets/hud/default/hud.png"
             );
 
+        let colt_icon =
+            Texture::load(
+                "assets/items/weapons/colt/icon.png"
+            );
+
         let mut cutscene_player =
 
         if let Some(
@@ -148,6 +153,25 @@ let menu_background =
                 map.spawn,
                 map.spawn_angle,
             );
+
+                    player
+                .inventory
+                .add_item(
+                    "colt",
+                    1,
+                );
+
+            player
+                .inventory
+                .equipped_weapon =
+                    Some(
+                        "colt"
+                            .to_string()
+                    );
+
+            player
+                .stats
+                .ammo = 10;
 
         let mut keys =
             HashSet::<KeyCode>::new();
@@ -561,6 +585,7 @@ let menu_background =
                             render_hud(
                                 frame,
                                 &hud_texture,
+                                &colt_icon,
                             );
                         }
 

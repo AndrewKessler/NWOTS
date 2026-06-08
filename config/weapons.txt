@@ -1,0 +1,1 @@
+colt = assets/items/weapons/colt/colt.txt

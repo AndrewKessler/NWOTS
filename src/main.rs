@@ -10,6 +10,7 @@ mod util;
 mod sprites;
 mod hud;
 mod cutscene;
+mod weapons;
 
 use engine::App;
 

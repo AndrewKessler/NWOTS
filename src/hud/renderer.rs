@@ -3,6 +3,7 @@ use crate::assets::Texture;
 pub fn render_hud(
     frame: &mut [u8],
     hud: &Texture,
+    colt_icon: &Texture,
 ) {
 
     let width =
@@ -69,6 +70,81 @@ pub fn render_hud(
                 ) as u8;
 
             frame[idx + 3] = 255;
+        }
+    }
+
+        draw_icon(
+        frame,
+        colt_icon,
+        158,
+        435,
+        32,
+    );
+}
+
+fn draw_icon(
+    frame: &mut [u8],
+    icon: &Texture,
+    screen_x: usize,
+    screen_y: usize,
+    size: usize,
+) {
+
+    for y in 0..size {
+
+        for x in 0..size {
+
+            let tex_x =
+                x
+                    * icon.width
+                    / size;
+
+            let tex_y =
+                y
+                    * icon.height
+                    / size;
+
+            let color =
+                icon.sample(
+                    tex_x,
+                    tex_y,
+                );
+
+            if color[3] == 0 {
+
+                continue;
+            }
+
+            let dst_x =
+                screen_x + x;
+
+            let dst_y =
+                screen_y + y;
+
+            if dst_x >= 640
+                || dst_y >= 480
+            {
+
+                continue;
+            }
+
+            let idx =
+                (
+                    dst_y * 640
+                    + dst_x
+                ) * 4;
+
+            frame[idx] =
+                color[0];
+
+            frame[idx + 1] =
+                color[1];
+
+            frame[idx + 2] =
+                color[2];
+
+            frame[idx + 3] =
+                255;
         }
     }
 }
