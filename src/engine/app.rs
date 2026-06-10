@@ -10,6 +10,8 @@ use crate::assets::Texture;
 use crate::render::render_menu;
 use crate::hud::render_hud;
 use crate::gameplay::pickup_items;
+use crate::weapons::
+    render_viewmodel;
 
 use pixels::{
     Pixels,
@@ -115,6 +117,11 @@ let menu_background =
         let colt_icon =
             Texture::load(
                 "assets/items/weapons/colt/icon.png"
+            );
+
+        let colt_viewmodel =
+            Texture::load(
+                "assets/items/weapons/colt/viewmodel.png"
             );
 
         let mut cutscene_player =
@@ -579,6 +586,21 @@ let menu_background =
                                 &sprite_registry,
                                 &zbuffer,
                             );
+
+                            if player
+                                .inventory
+                                .equipped_weapon
+                                .is_some()
+                            {
+
+                                render_viewmodel(
+                                    frame,
+                                    &colt_viewmodel,
+                                    235,
+                                    290,
+                                    0.7,
+                                );
+                            }
 
                             render_hud(
                                 frame,
