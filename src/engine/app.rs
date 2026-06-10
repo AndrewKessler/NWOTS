@@ -585,6 +585,7 @@ let menu_background =
                                 &hud_texture,
                                 &colt_icon,
                                 &player,
+                                &menu_font,
                             );
                         }
 

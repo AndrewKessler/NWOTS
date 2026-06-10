@@ -1,11 +1,15 @@
 use crate::assets::Texture;
 use crate::world::Player;
 
+use fontdue::Font;
+use crate::render::draw_text;
+
 pub fn render_hud(
     frame: &mut [u8],
     hud: &Texture,
     colt_icon: &Texture,
     player: &Player,
+    font: &Font,
 ) {
 
     let width =
@@ -89,6 +93,20 @@ pub fn render_hud(
             435,
             32,
         );
+
+        draw_text(
+            frame,
+            font,
+            &player
+                .stats
+                .ammo
+                .to_string(),
+            502,
+            18,
+            24.0,
+            [255,255,255],
+        );
+
     }
 }
 
