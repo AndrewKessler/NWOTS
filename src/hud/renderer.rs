@@ -1,9 +1,11 @@
 use crate::assets::Texture;
+use crate::world::Player;
 
 pub fn render_hud(
     frame: &mut [u8],
     hud: &Texture,
     colt_icon: &Texture,
+    player: &Player,
 ) {
 
     let width =
@@ -73,13 +75,21 @@ pub fn render_hud(
         }
     }
 
+            if player
+        .inventory
+        .has_item(
+            "colt"
+        )
+    {
+
         draw_icon(
-        frame,
-        colt_icon,
-        158,
-        435,
-        32,
-    );
+            frame,
+            colt_icon,
+            158,
+            435,
+            32,
+        );
+    }
 }
 
 fn draw_icon(

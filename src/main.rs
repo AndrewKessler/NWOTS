@@ -11,6 +11,7 @@ mod sprites;
 mod hud;
 mod cutscene;
 mod weapons;
+mod gameplay;
 
 use engine::App;
 

@@ -9,6 +9,7 @@ use crate::sprites::render_sprites;
 use crate::assets::Texture;
 use crate::render::render_menu;
 use crate::hud::render_hud;
+use crate::gameplay::pickup_items;
 
 use pixels::{
     Pixels,
@@ -140,7 +141,7 @@ let menu_background =
             None
         };
 
-        let map =
+        let mut map =
             load_map(
                 &config
                     .episode[0]
@@ -154,24 +155,6 @@ let menu_background =
                 map.spawn_angle,
             );
 
-                    player
-                .inventory
-                .add_item(
-                    "colt",
-                    1,
-                );
-
-            player
-                .inventory
-                .equipped_weapon =
-                    Some(
-                        "colt"
-                            .to_string()
-                    );
-
-            player
-                .stats
-                .ammo = 10;
 
         let mut keys =
             HashSet::<KeyCode>::new();
@@ -466,6 +449,11 @@ let menu_background =
                             &map,
                         );
 
+                        pickup_items(
+                            &mut player,
+                            &mut map,
+                        );
+
                         // Keep arrow turning
                         // until mouse look is verified
 
@@ -586,6 +574,7 @@ let menu_background =
                                 frame,
                                 &hud_texture,
                                 &colt_icon,
+                                &player,
                             );
                         }
 
