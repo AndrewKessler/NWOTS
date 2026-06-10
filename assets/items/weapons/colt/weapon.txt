@@ -1,0 +1,9 @@
+id = colt
+
+name = Colt Revolver
+
+pickup_ammo = 10
+
+icon = icon.png
+
+viewmodel = viewmodel.png

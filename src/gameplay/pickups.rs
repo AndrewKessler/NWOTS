@@ -3,9 +3,13 @@ use crate::world::{
     Player,
 };
 
+use crate::weapons::
+    WeaponRegistry;
+
 pub fn pickup_items(
     player: &mut Player,
     map: &mut Map,
+    weapons: &WeaponRegistry,
 ) {
 
     map.items.retain(
@@ -17,46 +21,59 @@ pub fn pickup_items(
                         item.position
                     );
 
-            if item.sprite_id
-                == "colt"
-                &&
-                distance < 16.0
+            if let Some(
+                weapon
+            ) =
+                weapons.get(
+                    &item.sprite_id
+                )
             {
 
-                if !player
-                    .inventory
-                    .has_item(
-                        "colt"
-                    )
+                if distance < 16.0
                 {
 
-                    println!(
-                        "Picked up Colt"
-                    );
-
-                    player
+                    if !player
                         .inventory
-                        .add_item(
-                            "colt",
-                            1,
+                        .has_item(
+                            &weapon.id
+                        )
+                    {
+
+                        println!(
+                            "Picked up {}",
+                            weapon.display_name
                         );
 
-                    player
-                        .inventory
-                        .equipped_weapon =
-                            Some(
-                                "colt"
-                                    .to_string()
+                        player
+                            .inventory
+                            .add_item(
+                                &weapon.id,
+                                1,
                             );
 
-                    player
-                        .stats
-                        .ammo += 10;
+                        player
+                            .inventory
+                            .equipped_weapon =
+                                Some(
+                                    weapon.id.clone()
+                                );
+
+                        player
+                            .stats
+                            .ammo +=
+                                weapon
+                                    .pickup_ammo
+                                    as i32;
+                    }
+
+                    false
+
+                } else {
+
+                    true
                 }
 
-                false
-            }
-            else {
+            } else {
 
                 true
             }

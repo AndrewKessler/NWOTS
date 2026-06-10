@@ -98,6 +98,15 @@ let menu_background =
                 "config/items.txt"
             );
 
+        let mut weapon_registry =
+            crate::weapons::
+                WeaponRegistry::new();
+
+        weapon_registry
+            .load_registry(
+                "config/weapons.txt"
+            );
+
         let hud_texture =
             Texture::load(
                 "assets/hud/default/hud.png"
@@ -452,6 +461,7 @@ let menu_background =
                         pickup_items(
                             &mut player,
                             &mut map,
+                            &weapon_registry,
                         );
 
                         // Keep arrow turning

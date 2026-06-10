@@ -7,10 +7,10 @@ pub struct WeaponDefinition {
     pub display_name:
         String,
 
-    pub ammo_per_pickup:
+    pub pickup_ammo:
         u32,
 
-    pub inventory_icon:
+    pub icon:
         String,
 
     pub viewmodel:

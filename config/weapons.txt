@@ -1,1 +1,3 @@
-colt = assets/items/weapons/colt/colt.txt
+# Weapons
+
+colt = assets/items/weapons/colt/weapon.txt
