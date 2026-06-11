@@ -12,6 +12,7 @@ mod hud;
 mod cutscene;
 mod weapons;
 mod gameplay;
+mod audio;
 
 use engine::App;
 

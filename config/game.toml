@@ -11,6 +11,7 @@ skippable = true
 [menu]
 font = "assets/fonts/scigoth.ttf"
 background = "assets/menu/background.png"
+music = "assets/music/menu.mp3"
 
 start_message = "Start Game"
 save_message = "Save Game"
@@ -23,11 +24,14 @@ title = "Minerva Base"
 [[episode.maps]]
 title = "Arrival"
 file = "maps/episode01/map01.txt"
+music = "assets/music/map01.mp3"
 
 [[episode.maps]]
 title = "Reactor"
 file = "maps/episode01/map02.txt"
+music = "assets/music/map02.mp3"
 
 [[episode.maps]]
 title = "Escape"
 file = "maps/episode01/map03.txt"
+music = "assets/music/map03.mp3"

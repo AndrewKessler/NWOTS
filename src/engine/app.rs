@@ -4,6 +4,7 @@ use std::fs;
 use std::sync::Arc;
 
 use crate::engine::GameState;
+use crate::audio::AudioManager;
 use crate::sprites::SpriteRegistry;
 use crate::sprites::render_sprites;
 use crate::assets::Texture;
@@ -107,6 +108,13 @@ let menu_background =
         weapon_registry
             .load_registry(
                 "config/weapons.txt"
+            );
+
+        let mut audio =
+            AudioManager::new();
+
+            audio.play_music(
+                &config.menu.music
             );
 
         let hud_texture =
@@ -393,6 +401,13 @@ let menu_background =
 
                                                     println!(
                                                         "Starting game..."
+                                                    );
+
+                                                    audio.play_music(
+                                                        &config
+                                                            .episode[0]
+                                                            .maps[0]
+                                                            .music
                                                     );
 
                                                     game_state =

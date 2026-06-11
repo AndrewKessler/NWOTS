@@ -32,6 +32,8 @@ pub struct MenuConfig {
 
     pub background: String,
 
+    pub music: String,
+
     pub start_message: String,
     pub save_message: String,
     pub load_message: String,
@@ -52,4 +54,6 @@ pub struct MapConfig {
     pub title: String,
 
     pub file: String,
+
+    pub music: String,
 }
