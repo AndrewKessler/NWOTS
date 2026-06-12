@@ -47,6 +47,69 @@ use crate::util::constants::{
 };
 use crate::world::Player;
 
+fn set_game_state(
+    game_state: &mut GameState,
+    new_state: GameState,
+    audio: &mut AudioManager,
+    config: &GameConfig,
+) {
+
+    if *game_state == new_state {
+
+        return;
+    }
+
+    match new_state {
+
+        GameState::Cutscene => {
+
+            if let Some(
+                cutscene
+            ) =
+                &config.cutscene
+            {
+
+                if !cutscene
+                    .music
+                    .trim()
+                    .is_empty()
+                {
+
+                    audio.play_music(
+                        &cutscene.music
+                    );
+
+                } else {
+
+                    audio.stop_music();
+                }
+            }
+        }
+
+        GameState::Menu => {
+
+            audio.play_music(
+                &config.menu.music
+            );
+        }
+
+        GameState::Playing => {
+
+            audio.play_music(
+                &config
+                    .episode[0]
+                    .maps[0]
+                    .music
+            );
+        }
+
+        GameState::Exit => {}
+    }
+
+    *game_state =
+        new_state;
+}
+
 pub struct App;
 
 impl App {
@@ -112,10 +175,6 @@ let menu_background =
 
         let mut audio =
             AudioManager::new();
-
-            audio.play_music(
-                &config.menu.music
-            );
 
         let hud_texture =
             Texture::load(
@@ -206,6 +265,16 @@ let menu_background =
 
             GameState::Menu
         };
+
+        if game_state
+            ==
+            GameState::Menu
+        {
+
+                audio.play_music(
+                    &config.menu.music
+                );
+            }
 
         let mut menu_index =
             0usize;
@@ -365,8 +434,12 @@ let menu_background =
                                         KeyCode::Space
                                     {
 
-                                        game_state =
-                                            GameState::Menu;
+                                        set_game_state(
+                                            &mut game_state,
+                                            GameState::Menu,
+                                            &mut audio,
+                                            &config,
+                                        );
                                     }
                                 }
 
@@ -403,15 +476,12 @@ let menu_background =
                                                         "Starting game..."
                                                     );
 
-                                                    audio.play_music(
-                                                        &config
-                                                            .episode[0]
-                                                            .maps[0]
-                                                            .music
+                                                    set_game_state(
+                                                        &mut game_state,
+                                                        GameState::Playing,
+                                                        &mut audio,
+                                                        &config,
                                                     );
-
-                                                    game_state =
-                                                        GameState::Playing;
                                                 }
 
                                                 1 => {
@@ -448,8 +518,12 @@ let menu_background =
 
                                         KeyCode::Escape => {
 
-                                            game_state =
-                                                GameState::Menu;
+                                            set_game_state(
+                                                &mut game_state,
+                                                GameState::Menu,
+                                                &mut audio,
+                                                &config,
+                                            );
                                         }
 
                                         _ => {}
@@ -538,8 +612,12 @@ let menu_background =
                                     if cutscene.finished()
                                     {
 
-                                        game_state =
-                                            GameState::Menu;
+                                        set_game_state(
+                                            &mut game_state,
+                                            GameState::Menu,
+                                            &mut audio,
+                                            &config,
+                                        );
                                     }
 
                                     else if let Some(
