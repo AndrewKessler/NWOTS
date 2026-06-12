@@ -15,4 +15,13 @@ pub struct WeaponDefinition {
 
     pub viewmodel:
         String,
+
+    pub damage:
+        i32,
+
+    pub fire_rate:
+        f32,
+
+    pub ammo_type:
+        String,
 }

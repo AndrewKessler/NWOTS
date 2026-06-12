@@ -117,6 +117,15 @@ impl WeaponRegistry {
         let mut viewmodel =
             String::new();
 
+        let mut damage =
+            0;
+
+        let mut fire_rate =
+            0.0;
+
+        let mut ammo_type =
+            String::new();
+
         for line in content.lines() {
 
             let line =
@@ -185,6 +194,48 @@ impl WeaponRegistry {
                         .to_string_lossy()
                         .to_string();
             }
+
+            else if line.starts_with(
+                "damage"
+            ) {
+
+                damage =
+                    line
+                        .split('=')
+                        .nth(1)
+                        .unwrap()
+                        .trim()
+                        .parse()
+                        .unwrap();
+            }
+
+            else if line.starts_with(
+                "fire_rate"
+            ) {
+
+                fire_rate =
+                    line
+                        .split('=')
+                        .nth(1)
+                        .unwrap()
+                        .trim()
+                        .parse()
+                        .unwrap();
+            }
+
+            else if line.starts_with(
+                "ammo_type"
+            ) {
+
+                ammo_type =
+                    line
+                        .split('=')
+                        .nth(1)
+                        .unwrap()
+                        .trim()
+                        .to_string();
+            }
+
         }
 
         self.weapons.insert(
@@ -203,6 +254,12 @@ impl WeaponRegistry {
                 icon,
 
                 viewmodel,
+
+                damage,
+
+                fire_rate,
+
+                ammo_type,
             }
         );
     }
