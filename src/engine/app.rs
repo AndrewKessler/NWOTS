@@ -395,6 +395,44 @@ let menu_background =
                                 ==
                                 ElementState::Pressed;
                     }
+
+                    if button
+                        ==
+                        MouseButton::Left
+                        &&
+                        state
+                            ==
+                            ElementState::Pressed
+                    {
+
+                        if game_state
+                            ==
+                            GameState::Playing
+                        {
+
+                            if player
+                                .inventory
+                                .equipped_weapon
+                                .is_some()
+                                &&
+                                player
+                                    .weapon_state
+                                    ==
+                                    crate::weapons::
+                                        WeaponState::Idle
+                            {
+
+                                player.weapon_state =
+                                    crate::weapons::
+                                        WeaponState::Firing;
+
+                                println!(
+                                    "Bang!"
+                                );
+                            }
+                        }
+                    }
+
                 }
 
                 Event::WindowEvent {
@@ -560,9 +598,6 @@ let menu_background =
                             &weapon_registry,
                         );
 
-                        // Keep arrow turning
-                        // until mouse look is verified
-
                         if keys.contains(
                             &KeyCode::ArrowLeft
                         ) {
@@ -577,6 +612,49 @@ let menu_background =
 
                             player.angle +=
                                 0.05;
+                        }
+
+                        match player.weapon_state {
+
+                            crate::weapons::
+                                WeaponState::Idle => {}
+
+                            crate::weapons::
+                                WeaponState::Firing => {
+
+                                //println!("Entering Cooldown");
+
+                                player.weapon_timer =
+                                    0.35;
+
+                                player.weapon_state =
+                                    crate::weapons::
+                                        WeaponState::Cooldown;
+                            }
+
+                            crate::weapons::
+                                WeaponState::Cooldown => {
+
+                               // println!(
+                               //     "Cooldown: {}",
+                               //     player.weapon_timer
+                               // );
+
+                                player.weapon_timer -=
+                                    1.0 / 60.0;
+
+                                if player
+                                    .weapon_timer
+                                    <= 0.0
+                                {
+
+                                //    println!("Ready");
+
+                                    player.weapon_state =
+                                        crate::weapons::
+                                            WeaponState::Idle;
+                                }
+                            }
                         }
                     }
 

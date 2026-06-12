@@ -1,5 +1,6 @@
 use glam::Vec2;
 
+use crate::weapons::WeaponState;
 use crate::world::{
     Inventory,
     PlayerStats,
@@ -16,6 +17,10 @@ pub struct Player {
     pub stats: PlayerStats,
 
     pub inventory: Inventory,
+
+    pub weapon_state: WeaponState,
+
+    pub weapon_timer: f32,
 }
 
 impl Player {
@@ -38,6 +43,12 @@ impl Player {
 
             inventory:
                 Inventory::default(),
+
+            weapon_state:
+                WeaponState::Idle,
+
+            weapon_timer:
+                0.0,
         }
     }
 }
