@@ -114,8 +114,11 @@ impl WeaponRegistry {
         let mut icon =
             String::new();
 
-        let mut viewmodel =
+        let mut idle_frame =
             String::new();
+
+        let mut fire_frames =
+            0usize;
 
         let mut damage =
             0;
@@ -179,10 +182,10 @@ impl WeaponRegistry {
             }
 
             else if line.starts_with(
-                "viewmodel"
+                "idle_frame"
             ) {
 
-                viewmodel =
+                idle_frame =
                     base_path
                         .join(
                             line
@@ -193,6 +196,20 @@ impl WeaponRegistry {
                         )
                         .to_string_lossy()
                         .to_string();
+            }
+
+            else if line.starts_with(
+                "fire_frames"
+            ) {
+
+                fire_frames =
+                    line
+                        .split('=')
+                        .nth(1)
+                        .unwrap()
+                        .trim()
+                        .parse()
+                        .unwrap();
             }
 
             else if line.starts_with(
@@ -253,7 +270,9 @@ impl WeaponRegistry {
 
                 icon,
 
-                viewmodel,
+                idle_frame,
+
+                fire_frames,
 
                 damage,
 

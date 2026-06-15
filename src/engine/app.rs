@@ -186,9 +186,29 @@ let menu_background =
                 "assets/items/weapons/colt/icon.png"
             );
 
-        let colt_viewmodel =
+        let colt_idle =
             Texture::load(
-                "assets/items/weapons/colt/viewmodel.png"
+                "assets/items/weapons/colt/idle_0.png"
+            );
+
+        let colt_fire_0 =
+            Texture::load(
+                "assets/items/weapons/colt/fire_0.png"
+            );
+
+        let colt_fire_1 =
+            Texture::load(
+                "assets/items/weapons/colt/fire_1.png"
+            );
+
+        let colt_fire_2 =
+            Texture::load(
+                "assets/items/weapons/colt/fire_2.png"
+            );
+
+        let colt_fire_3 =
+            Texture::load(
+                "assets/items/weapons/colt/fire_3.png"
             );
 
         let mut cutscene_player =
@@ -422,13 +442,32 @@ let menu_background =
                                         WeaponState::Idle
                             {
 
-                                player.weapon_state =
-                                    crate::weapons::
-                                        WeaponState::Firing;
+                                if player
+                                    .stats
+                                    .ammo
+                                    > 0
+                                {
 
-                                println!(
-                                    "Bang!"
-                                );
+                                    player
+                                        .stats
+                                        .ammo
+                                        -= 1;
+
+                                    player.weapon_state =
+                                        crate::weapons::
+                                            WeaponState::Firing;
+
+                                    println!(
+                                        "Bang!"
+                                    );
+                                }
+
+                                else {
+
+                                    println!(
+                                        "Click!"
+                                    );
+                                }
                             }
                         }
                     }
@@ -624,6 +663,11 @@ let menu_background =
 
                                 //println!("Entering Cooldown");
 
+                                player.weapon_frame = 0;
+
+                                player.weapon_anim_timer =
+                                    0.04;
+
                                 player.weapon_timer =
                                     0.35;
 
@@ -643,6 +687,24 @@ let menu_background =
                                 player.weapon_timer -=
                                     1.0 / 60.0;
 
+                                player.weapon_anim_timer -=
+                                    1.0 / 60.0;
+
+                                if player
+                                    .weapon_anim_timer
+                                    <= 0.0
+                                {
+
+                                    player.weapon_anim_timer =
+                                        0.04;
+
+                                    if player.weapon_frame < 3
+                                    {
+
+                                        player.weapon_frame += 1;
+                                    }
+                                }
+
                                 if player
                                     .weapon_timer
                                     <= 0.0
@@ -653,6 +715,9 @@ let menu_background =
                                     player.weapon_state =
                                         crate::weapons::
                                             WeaponState::Idle;
+
+                                    player.weapon_frame =
+                                        0;
                                 }
                             }
                         }
@@ -764,9 +829,35 @@ let menu_background =
                                 .is_some()
                             {
 
+                                let current_viewmodel =
+
+                                    match player.weapon_state {
+
+                                        crate::weapons::
+                                            WeaponState::Idle => {
+
+                                            &colt_idle
+                                        }
+
+                                        crate::weapons::
+                                            WeaponState::Firing
+                                        |
+                                        crate::weapons::
+                                            WeaponState::Cooldown => {
+
+                                            match player.weapon_frame {
+
+                                                0 => &colt_fire_0,
+                                                1 => &colt_fire_1,
+                                                2 => &colt_fire_2,
+                                                _ => &colt_fire_3,
+                                            }
+                                        }
+                                    };
+
                                 render_viewmodel(
                                     frame,
-                                    &colt_viewmodel,
+                                    current_viewmodel,
                                     235,
                                     290,
                                     0.7,

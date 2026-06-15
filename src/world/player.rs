@@ -21,6 +21,10 @@ pub struct Player {
     pub weapon_state: WeaponState,
 
     pub weapon_timer: f32,
+
+    pub weapon_frame: usize,
+
+    pub weapon_anim_timer: f32,
 }
 
 impl Player {
@@ -48,6 +52,12 @@ impl Player {
                 WeaponState::Idle,
 
             weapon_timer:
+                0.0,
+
+            weapon_frame:
+                0,
+
+            weapon_anim_timer:
                 0.0,
         }
     }

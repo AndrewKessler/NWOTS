@@ -13,8 +13,11 @@ pub struct WeaponDefinition {
     pub icon:
         String,
 
-    pub viewmodel:
+    pub idle_frame:
         String,
+
+    pub fire_frames:
+        usize,
 
     pub damage:
         i32,

@@ -6,10 +6,12 @@ pickup_ammo = 10
 
 icon = icon.png
 
-viewmodel = viewmodel.png
-
 damage = 25
 
 fire_rate = 0.35
 
 ammo_type = bullets
+
+idle_frame = idle_0.png
+
+fire_frames = 4
