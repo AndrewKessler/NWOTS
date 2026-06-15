@@ -84,4 +84,32 @@ impl AudioManager {
 
         self.sink = None;
     }
+
+    pub fn play_sound(
+        &self,
+        path: &str,
+    ) {
+
+        let file =
+            File::open(path)
+                .unwrap();
+
+        let source =
+            Decoder::try_from(
+                BufReader::new(file)
+            )
+            .unwrap();
+
+        let sink =
+            Sink::connect_new(
+                self.stream.mixer()
+            );
+
+        sink.append(
+            source
+        );
+
+        sink.detach();
+    }
+
 }

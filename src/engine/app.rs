@@ -463,6 +463,11 @@ let menu_background =
                                         crate::weapons::
                                             WeaponState::Firing;
 
+                                    audio.play_sound(
+                                        &colt_weapon
+                                            .fire_sound
+                                    );
+
                                     println!(
                                         "Bang!"
                                     );
