@@ -19,6 +19,9 @@ pub struct WeaponDefinition {
     pub fire_frames:
         usize,
 
+    pub fire_sound:
+        String,
+
     pub damage:
         i32,
 

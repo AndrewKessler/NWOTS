@@ -15,3 +15,5 @@ ammo_type = bullets
 idle_frame = idle_0.png
 
 fire_frames = 4
+
+fire_sound = fire_colt.mp3

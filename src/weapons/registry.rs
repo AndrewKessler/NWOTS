@@ -120,6 +120,9 @@ impl WeaponRegistry {
         let mut fire_frames =
             0usize;
 
+        let mut fire_sound =
+            String::new();
+
         let mut damage =
             0;
 
@@ -213,6 +216,23 @@ impl WeaponRegistry {
             }
 
             else if line.starts_with(
+                "fire_sound"
+            ) {
+
+                fire_sound =
+                    base_path
+                        .join(
+                            line
+                                .split('=')
+                                .nth(1)
+                                .unwrap()
+                                .trim()
+                        )
+                        .to_string_lossy()
+                        .to_string();
+            }
+
+            else if line.starts_with(
                 "damage"
             ) {
 
@@ -273,6 +293,8 @@ impl WeaponRegistry {
                 idle_frame,
 
                 fire_frames,
+
+                fire_sound,
 
                 damage,
 

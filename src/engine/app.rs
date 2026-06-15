@@ -173,6 +173,12 @@ let menu_background =
                 "config/weapons.txt"
             );
 
+        let colt_weapon =
+            weapon_registry
+                .get("colt")
+                .unwrap()
+                .clone();
+
         let mut audio =
             AudioManager::new();
 
@@ -666,10 +672,16 @@ let menu_background =
                                 player.weapon_frame = 0;
 
                                 player.weapon_anim_timer =
-                                    0.04;
+                                    colt_weapon
+                                        .fire_rate
+                                        /
+                                        colt_weapon
+                                            .fire_frames
+                                            as f32;
 
                                 player.weapon_timer =
-                                    0.35;
+                                    colt_weapon
+                                        .fire_rate;
 
                                 player.weapon_state =
                                     crate::weapons::
@@ -696,9 +708,17 @@ let menu_background =
                                 {
 
                                     player.weapon_anim_timer =
-                                        0.04;
+                                        colt_weapon
+                                            .fire_rate
+                                            /
+                                            colt_weapon
+                                                .fire_frames
+                                                as f32;
 
-                                    if player.weapon_frame < 3
+                                    if player.weapon_frame + 1
+                                        <
+                                        colt_weapon
+                                            .fire_frames
                                     {
 
                                         player.weapon_frame += 1;
