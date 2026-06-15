@@ -3,6 +3,7 @@ use std::fs;
 use glam::Vec2;
 
 use crate::sprites::SpriteInstance;
+use crate::world::ExitTrigger;
 use crate::world::{
     Map,
     Sector,
@@ -32,6 +33,9 @@ pub fn load_map(
 
     let mut items =
         Vec::<SpriteInstance>::new();
+
+    let mut exits =
+        Vec::<ExitTrigger>::new();
 
     for line in content.lines() {
 
@@ -210,6 +214,35 @@ pub fn load_map(
                         );
                     }
 
+            "exit" => {
+
+                        exits.push(
+
+                            ExitTrigger {
+
+                                position:
+                                    Vec2::new(
+                                        parts[1]
+                                            .parse()
+                                            .unwrap(),
+
+                                        parts[2]
+                                            .parse()
+                                            .unwrap(),
+                                    ),
+
+                                radius:
+                                    parts[3]
+                                        .parse()
+                                        .unwrap(),
+
+                                target_map:
+                                    parts[4]
+                                        .to_string(),
+                            }
+                        );
+                    }
+
             _ => {}
         }
     }
@@ -221,9 +254,10 @@ pub fn load_map(
     }
 
     Map {
-    sectors,
-    spawn,
-    spawn_angle,
-    items,
+        sectors,
+        spawn,
+        spawn_angle,
+        items,
+        exits,
     }
 }

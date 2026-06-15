@@ -5,7 +5,9 @@ pub mod player;
 
 pub mod player_stats;
 pub mod inventory;
+pub mod exit_trigger;
 
+pub use exit_trigger::ExitTrigger;
 pub use map::Map;
 pub use sector::Sector;
 pub use wall::{Wall, WallType};
