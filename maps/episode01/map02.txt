@@ -1,20 +1,83 @@
 sector sector_0
 
-floor floor
-ceiling roof
+floor metalfloor
+ceiling metalroof
 
-wall 64 64 832 64 brickwall solid
-wall 832 64 832 448 brickwall solid
-wall 832 448 896 64 brickwall solid
-wall 896 64 1856 64 brickwall solid
-wall 1856 64 1856 320 brickwall solid
-wall 64 64 64 960 labwall solid
-wall 64 960 1280 960 labwall solid
-wall 1280 640 1280 960 labwall solid
-wall 1280 640 1344 960 labwall solid
-wall 1344 960 2752 960 labwall solid
-wall 2752 576 2752 960 labwall solid
-wall 1856 576 2752 576 labwall solid
-wall 1856 320 1856 576 labwall solid
+wall 2368 64 3264 64 wall7 solid
+wall 3264 64 3264 256 wall7 solid
+wall 2880 320 3264 256 wall7 solid
+wall 2368 64 2368 256 wall7 solid
+wall 2368 256 2752 320 wall7 solid
+wall 2752 320 2752 512 brickwall solid
+wall 1472 512 2752 512 brickwall solid
+wall 2880 320 2880 512 brickwall solid
+wall 2880 512 3200 512 brickwall solid
+wall 2688 576 2752 768 brickwall solid
+wall 2880 576 3200 576 brickwall solid
+wall 2880 576 2880 768 brickwall solid
+wall 2624 576 2688 576 brickwall solid
+wall 2560 576 2624 576 brickwall solid
+wall 2496 576 2560 576 brickwall solid
+wall 2368 832 2752 768 wall7 solid
+wall 2368 832 2368 1024 wall7 solid
+wall 2368 1024 3264 1024 wall7 solid
+wall 3264 832 3264 1024 wall7 solid
+wall 2880 768 3264 832 wall7 solid
+wall 2432 576 2496 576 brickwall solid
+wall 2368 576 2432 576 brickwall solid
+wall 3200 512 3264 512 wall7 solid
+wall 3200 576 3264 576 wall7 solid
+portal 3264 512 3264 576 sector_1
+wall 2304 576 2368 576 brickwall solid
+wall 2240 576 2304 576 brickwall solid
+wall 2176 576 2240 576 brickwall solid
+wall 2112 576 2176 576 brickwall solid
+wall 2048 576 2112 576 brickwall solid
+wall 1984 576 2048 576 brickwall solid
+wall 1920 576 1984 576 brickwall solid
+wall 1856 576 1920 576 brickwall solid
+wall 1792 576 1856 576 brickwall solid
+wall 1728 576 1792 576 brickwall solid
+wall 1664 576 1728 576 brickwall solid
+wall 1600 576 1664 576 brickwall solid
+wall 1536 576 1600 576 brickwall solid
+wall 1472 576 1536 576 brickwall solid
+wall 1408 512 1472 512 wall solid
+wall 1408 576 1472 576 wall solid
+portal 1408 512 1408 576 sector_2
 
-spawn 352 800 0
+sector sector_1
+
+floor textureD
+ceiling textureU
+
+wall 3520 256 4416 256 wall7 solid
+wall 4416 256 4416 832 wall7 solid
+wall 3520 832 4416 832 wall7 solid
+wall 3520 640 3520 832 wall7 solid
+wall 3264 576 3520 640 wall7 solid
+wall 3520 256 3520 448 wall7 solid
+wall 3264 512 3520 448 wall7 solid
+portal 3264 512 3264 576 sector_0
+
+sector sector_2
+
+floor floor6
+ceiling roof6
+
+wall 64 384 1408 384 wall solid
+wall 1408 384 1408 512 wall solid
+wall 64 384 64 704 wall solid
+wall 64 704 1408 704 wall solid
+wall 1408 576 1408 704 wall solid
+portal 128 512 128 512 sector_3
+portal 1408 512 1408 576 sector_0
+
+sector sector_3
+
+floor metalfloor
+ceiling metalroof
+
+portal 128 512 128 512 sector_2
+
+spawn 160 544 0
