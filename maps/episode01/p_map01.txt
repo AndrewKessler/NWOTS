@@ -3,27 +3,44 @@ sector sector_0
 floor metalfloor
 ceiling metalroof
 
-wall 64 64 1408 64 textureN solid
-wall 1408 64 1408 384 textureN solid
-wall 896 384 1408 384 textureN solid
-wall 64 64 64 384 textureN solid
-wall 64 384 448 384 textureN solid
-portal 448 384 896 384 sector_1
+wall 64 64 704 64 wall7 solid
+wall 64 64 64 192 wall7 solid
+wall 64 192 64 256 wall6 solid
+wall 64 256 64 384 wall7 solid
+wall 64 384 640 384 wall7 solid
+wall 640 384 640 896 wall7 solid
+wall 704 64 768 64 wall6 solid
+wall 768 64 1408 64 wall7 solid
+wall 1408 64 1408 192 wall7 solid
+wall 896 384 1408 384 wall7 solid
+wall 1408 256 1408 384 wall7 solid
+wall 896 384 896 896 wall7 solid
+portal 640 896 896 896 sector_1
+wall 1408 192 1408 256 wall6 solid
 
 sector sector_1
 
 floor textureD
 ceiling textureU
 
-portal 448 384 896 384 sector_0
-wall 448 384 448 896 textureN solid
-wall 896 384 896 896 textureN solid
-wall 64 960 448 896 brickwall solid
+portal 640 896 896 896 sector_0
+wall 64 960 640 896 wall8 solid
+wall 896 896 1856 960 wall8 solid
+wall 640 1280 1856 1280 wall8 solid
+wall 576 1280 640 1280 wall8 solid
+wall 512 1280 576 1280 wall8 solid
+wall 448 1280 512 1280 wall8 solid
+wall 384 1280 448 1280 wall8 solid
 wall 64 960 64 1280 brickwall solid
-wall 64 1280 1856 1280 brickwall solid
+wall 320 1280 384 1280 wall8 solid
+wall 256 1280 320 1280 wall8 solid
+wall 192 1280 256 1280 wall8 solid
+wall 128 1280 192 1280 wall8 solid
+wall 64 1280 128 1280 wall8 solid
 wall 1856 960 1856 1280 brickwall solid
-wall 896 896 1856 960 brickwall solid
 
 spawn 672 224 0
 
 item colt 700 224 0
+
+item uparrow 700 224 0

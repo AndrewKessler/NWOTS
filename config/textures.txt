@@ -13,3 +13,4 @@ metalroof = assets/textures/metalroof.png
 labwall = assets/textures/labwall.png
 roof = assets/textures/roof.png
 floor = assets/textures/floor.png
+exit = assets/textures/exit.png

@@ -308,6 +308,9 @@ let menu_background =
         let mut right_mouse =
             false;
 
+        let mut use_pressed =
+            false;
+
         let event_loop =
             EventLoop::new()
                 .unwrap();
@@ -512,6 +515,15 @@ let menu_background =
                                     keycode
                                 );
 
+                                if keycode
+                                    ==
+                                    KeyCode::KeyE
+                                {
+
+                                    use_pressed =
+                                        true;
+                                }
+
                                 if game_state
                                     ==
                                     GameState::Cutscene
@@ -648,6 +660,44 @@ let menu_background =
                             &weapon_registry,
                         );
 
+                        for exit in
+                            &map.exits
+                        {
+
+                            let distance =
+
+                                player.position
+                                    .distance(
+                                        exit.position
+                                    );
+
+                            if distance
+                                <=
+                                exit.radius
+                                &&
+                                use_pressed
+                            {
+
+                                println!(
+                                    "Loading {}",
+                                    exit.target_map
+                                );
+
+                                map =
+                                    load_map(
+                                        &exit.target_map
+                                    );
+
+                                player.position =
+                                    map.spawn;
+
+                                player.angle =
+                                    map.spawn_angle;
+
+                                break;
+                            }
+                        }
+
                         if keys.contains(
                             &KeyCode::ArrowLeft
                         ) {
@@ -747,6 +797,9 @@ let menu_background =
                             }
                         }
                     }
+                    
+                    use_pressed =
+                        false;
 
                     window
                         .request_redraw();

@@ -3,6 +3,7 @@ backward=s
 left=a
 right=d
 run=shift
+use=e
 menu=esc
 up=up
 down=down

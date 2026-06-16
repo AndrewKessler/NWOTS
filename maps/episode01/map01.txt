@@ -37,7 +37,12 @@ wall 256 1280 320 1280 wall8 solid
 wall 192 1280 256 1280 wall8 solid
 wall 128 1280 192 1280 wall8 solid
 wall 64 1280 128 1280 wall8 solid
-wall 1856 960 1856 1280 brickwall solid
+wall 1856 960 1856 1088 brickwall solid
+wall 1856 1088 1856 1152 exit solid
+
+exit 1800 1120 64 maps/episode01/map02.txt
+
+wall 1856 1152 1856 1280 brickwall solid
 
 spawn 672 224 0
 
