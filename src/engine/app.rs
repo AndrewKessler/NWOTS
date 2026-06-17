@@ -3,7 +3,9 @@ use std::collections::HashSet;
 use std::fs;
 use std::sync::Arc;
 
+use crate::render::draw_world_text;
 use crate::engine::GameState;
+use crate::engine::LevelTransition;
 use crate::audio::AudioManager;
 use crate::sprites::SpriteRegistry;
 use crate::sprites::render_sprites;
@@ -41,6 +43,7 @@ use crate::config::GameConfig;
 use crate::map_loader::load_map;
 use crate::physics::update_player;
 use crate::render::render_world;
+use crate::render::draw_text;
 use crate::util::constants::{
     HEIGHT,
     WIDTH,
@@ -110,6 +113,25 @@ fn set_game_state(
         new_state;
 }
 
+fn find_map_title(
+    config: &GameConfig,
+    map_file: &str,
+) -> String {
+
+    for episode in &config.episode {
+
+        for map in &episode.maps {
+
+            if map.file == map_file {
+
+                return map.title.clone();
+            }
+        }
+    }
+
+    "Unknown Map".to_string()
+}
+
 pub struct App;
 
 impl App {
@@ -146,10 +168,15 @@ impl App {
             )
             .unwrap();
 
-let menu_background =
-    Texture::load(
-        &config.menu.background
-    );
+        let menu_background =
+            Texture::load(
+                &config.menu.background
+            );
+
+        let map_complete_background =
+            Texture::load(
+                "assets/menu/map01_complete.png"
+            );
 
         let textures =
             TextureRegistry::load(
@@ -264,6 +291,8 @@ let menu_background =
                 map.spawn_angle,
             );
 
+        let mut transition =
+            LevelTransition::new();
 
         let mut keys =
             HashSet::<KeyCode>::new();
@@ -648,6 +677,29 @@ let menu_background =
                         GameState::Playing
                     {
 
+                        if transition.active {
+
+                            transition.timer -=
+                                1.0 / 60.0;
+
+                            if transition.timer <= 0.0 {
+
+                                map =
+                                    load_map(
+                                        &transition.next_map
+                                    );
+
+                                player.position =
+                                    map.spawn;
+
+                                player.angle =
+                                    map.spawn_angle;
+
+                                transition.active =
+                                    false;
+                            }
+                        }
+
                         update_player(
                             &mut player,
                             &keys,
@@ -678,21 +730,20 @@ let menu_background =
                                 use_pressed
                             {
 
-                                println!(
-                                    "Loading {}",
-                                    exit.target_map
-                                );
+                                transition.active =
+                                    true;
 
-                                map =
-                                    load_map(
-                                        &exit.target_map
+                                transition.timer =
+                                    2.0;
+
+                                transition.next_map =
+                                    exit.target_map.clone();
+
+                                transition.title =
+                                    find_map_title(
+                                        &config,
+                                        &exit.target_map,
                                     );
-
-                                player.position =
-                                    map.spawn;
-
-                                player.angle =
-                                    map.spawn_angle;
 
                                 break;
                             }
@@ -885,70 +936,137 @@ let menu_background =
 
                         GameState::Playing => {
 
-                            let zbuffer =
-                                render_world(
+                            if transition.active {
+
+                                let copy_len =
+                                    frame.len()
+                                        .min(
+                                            map_complete_background
+                                                .data
+                                                .len()
+                                        );
+
+                                frame[..copy_len]
+                                    .copy_from_slice(
+                                        &map_complete_background
+                                            .data[..copy_len]
+                                    );
+
+                                draw_text(
                                     frame,
-                                    &player,
-                                    &map,
-                                    &textures.textures,
+                                    &menu_font,
+                                    "Entering",
+                                    220,
+                                    180,
+                                    32.0,
+                                    [255,255,255],
                                 );
 
-                            render_sprites(
-                                frame,
-                                &player,
-                                &map,
-                                &sprite_registry,
-                                &zbuffer,
-                            );
-
-                            if player
-                                .inventory
-                                .equipped_weapon
-                                .is_some()
-                            {
-
-                                let current_viewmodel =
-
-                                    match player.weapon_state {
-
-                                        crate::weapons::
-                                            WeaponState::Idle => {
-
-                                            &colt_idle
-                                        }
-
-                                        crate::weapons::
-                                            WeaponState::Firing
-                                        |
-                                        crate::weapons::
-                                            WeaponState::Cooldown => {
-
-                                            match player.weapon_frame {
-
-                                                0 => &colt_fire_0,
-                                                1 => &colt_fire_1,
-                                                2 => &colt_fire_2,
-                                                _ => &colt_fire_3,
-                                            }
-                                        }
-                                    };
-
-                                render_viewmodel(
+                                draw_text(
                                     frame,
-                                    current_viewmodel,
-                                    235,
-                                    290,
-                                    0.7,
+                                    &menu_font,
+                                    &transition
+                                        .title
+                                        .to_uppercase(),
+                                    180,
+                                    240,
+                                    48.0,
+                                    [255,255,0],
                                 );
                             }
 
-                            render_hud(
-                                frame,
-                                &hud_texture,
-                                &colt_icon,
-                                &player,
-                                &menu_font,
-                            );
+                            else {
+
+                                let zbuffer =
+                                    render_world(
+                                        frame,
+                                        &player,
+                                        &map,
+                                        &textures.textures,
+                                    );
+
+                                render_sprites(
+                                    frame,
+                                    &player,
+                                    &map,
+                                    &sprite_registry,
+                                    &zbuffer,
+                                );
+
+                                for exit in &map.exits {
+
+                                    let distance =
+                                        player.position
+                                            .distance(
+                                                exit.position
+                                            );
+
+                                    if distance
+                                        <=
+                                        exit.radius
+                                        &&
+                                        !exit.prompt.is_empty()
+                                    {
+
+                                        draw_world_text(
+                                            frame,
+                                            &menu_font,
+                                            &exit.prompt,
+                                            exit.position,
+                                            &player,
+                                        );
+                                    }
+                                }
+
+                                if player
+                                    .inventory
+                                    .equipped_weapon
+                                    .is_some()
+                                {
+
+                                    let current_viewmodel =
+
+                                        match player.weapon_state {
+
+                                            crate::weapons::
+                                                WeaponState::Idle => {
+
+                                                &colt_idle
+                                            }
+
+                                            crate::weapons::
+                                                WeaponState::Firing
+                                            |
+                                            crate::weapons::
+                                                WeaponState::Cooldown => {
+
+                                                match player.weapon_frame {
+
+                                                    0 => &colt_fire_0,
+                                                    1 => &colt_fire_1,
+                                                    2 => &colt_fire_2,
+                                                    _ => &colt_fire_3,
+                                                }
+                                            }
+                                        };
+
+                                    render_viewmodel(
+                                        frame,
+                                        current_viewmodel,
+                                        235,
+                                        290,
+                                        0.7,
+                                    );
+                                }
+
+                                render_hud(
+                                    frame,
+                                    &hud_texture,
+                                    &colt_icon,
+                                    &player,
+                                    &menu_font,
+                                );
+                            }
                         }
 
                         GameState::Exit => {

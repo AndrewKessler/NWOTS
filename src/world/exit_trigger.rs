@@ -7,4 +7,6 @@ pub struct ExitTrigger {
     pub radius: f32,
 
     pub target_map: String,
+
+    pub prompt: String,
 }

@@ -40,7 +40,7 @@ wall 64 1280 128 1280 wall8 solid
 wall 1856 960 1856 1088 brickwall solid
 wall 1856 1088 1856 1152 exit solid
 
-exit 1800 1120 64 maps/episode01/map02.txt
+exit 1800 1120 64 maps/episode01/map02.txt Press_E_To_Exit
 
 wall 1856 1152 1856 1280 brickwall solid
 

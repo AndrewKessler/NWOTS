@@ -239,6 +239,17 @@ pub fn load_map(
                                 target_map:
                                     parts[4]
                                         .to_string(),
+
+                                prompt:
+                                    if parts.len() > 5 {
+
+                                        parts[5]
+                                            .replace('_', " ")
+
+                                    } else {
+
+                                        String::new()
+                                    },
                             }
                         );
                     }
