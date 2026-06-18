@@ -584,6 +584,10 @@ impl App {
                                             if menu_index > 0 {
 
                                                 menu_index -= 1;
+
+                                                audio.play_sound(
+                                                    &config.menu.move_sound
+                                                );
                                             }
                                         }
 
@@ -592,6 +596,10 @@ impl App {
                                             if menu_index < 3 {
 
                                                 menu_index += 1;
+
+                                                audio.play_sound(
+                                                    &config.menu.move_sound
+                                                );
                                             }
                                         }
 

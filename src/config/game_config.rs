@@ -34,6 +34,8 @@ pub struct MenuConfig {
 
     pub music: String,
 
+    pub move_sound: String,
+
     pub start_message: String,
     pub save_message: String,
     pub load_message: String,

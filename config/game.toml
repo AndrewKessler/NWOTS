@@ -12,6 +12,7 @@ skippable = true
 font = "assets/fonts/scigoth.ttf"
 background = "assets/menu/background.png"
 music = "assets/music/menu.mp3"
+move_sound = "assets/music/menu_move.mp3"
 
 start_message = "Start Game"
 save_message = "Save Game"
