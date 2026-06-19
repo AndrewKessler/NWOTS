@@ -15,4 +15,6 @@ pub struct Map {
     pub items: Vec<SpriteInstance>,
 
     pub exits: Vec<ExitTrigger>,
+
+    pub skybox_path: Option<String>,
 }

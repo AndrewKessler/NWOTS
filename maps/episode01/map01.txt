@@ -46,6 +46,8 @@ wall 1856 1152 1856 1280 brickwall solid
 
 spawn 672 224 0
 
+skybox assets/skies/dusk/
+
 item colt 700 224 0
 
 item uparrow 700 224 0

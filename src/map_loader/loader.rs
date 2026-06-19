@@ -37,6 +37,9 @@ pub fn load_map(
     let mut exits =
         Vec::<ExitTrigger>::new();
 
+    let mut skybox_path =
+        None;
+
     for line in content.lines() {
 
         let line =
@@ -254,6 +257,15 @@ pub fn load_map(
                         );
                     }
 
+            "skybox" => {
+
+                        skybox_path =
+                            Some(
+                                parts[1]
+                                    .to_string()
+                            );
+                    }
+
             _ => {}
         }
     }
@@ -270,5 +282,6 @@ pub fn load_map(
         spawn_angle,
         items,
         exits,
+        skybox_path,
     }
 }
