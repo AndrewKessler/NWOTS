@@ -6,7 +6,9 @@ pub mod floor;
 pub mod ceiling;
 pub mod wall;
 pub mod world_text;
+pub mod skybox;
 
+pub use skybox::Skybox;
 pub use menu::render_menu;
 pub use text::draw_text;
 pub use world::render_world;

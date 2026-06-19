@@ -285,6 +285,24 @@ impl App {
                     .file
             );
 
+        let mut skybox =
+
+            if let Some(path)
+                =
+                &map.skybox_path
+            {
+
+                Some(
+                    crate::render::Skybox::load(
+                        path
+                    )
+                )
+
+            } else {
+
+                None
+            };
+
         let mut player =
             Player::new(
                 map.spawn,
@@ -696,6 +714,24 @@ impl App {
                                     load_map(
                                         &transition.next_map
                                     );
+
+                                skybox =
+
+                                    if let Some(path)
+                                        =
+                                        &map.skybox_path
+                                    {
+
+                                        Some(
+                                            crate::render::Skybox::load(
+                                                path
+                                            )
+                                        )
+
+                                    } else {
+
+                                        None
+                                    };
 
                                 player.position =
                                     map.spawn;
