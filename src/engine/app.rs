@@ -1022,12 +1022,13 @@ impl App {
                             else {
 
                                 let zbuffer =
-                                    render_world(
-                                        frame,
-                                        &player,
-                                        &map,
-                                        &textures.textures,
-                                    );
+                                render_world(
+                                    frame,
+                                    &player,
+                                    &map,
+                                    &textures.textures,
+                                    skybox.as_ref(),
+                                );
 
                                 render_sprites(
                                     frame,

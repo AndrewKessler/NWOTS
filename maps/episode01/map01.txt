@@ -1,7 +1,7 @@
 sector sector_0
 
 floor metalfloor
-ceiling metalroof
+ceiling sky
 
 wall 64 64 704 64 wall7 solid
 wall 64 64 64 192 wall7 solid
@@ -21,7 +21,7 @@ wall 1408 192 1408 256 wall6 solid
 sector sector_1
 
 floor textureD
-ceiling textureU
+ceiling sky
 
 portal 640 896 896 896 sector_0
 wall 64 960 640 896 wall8 solid

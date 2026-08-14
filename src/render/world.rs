@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use glam::Vec2;
 
 use crate::assets::Texture;
+use crate::render::Skybox;
+
 use crate::world::{
     Map,
     Player,
@@ -24,11 +26,12 @@ use crate::util::constants::{
 };
 
 pub fn render_world(
-    frame: &mut [u8],
-    player: &Player,
-    map: &Map,
-    textures: &HashMap<String, Texture>,
-) -> Vec<f32> {
+        frame: &mut [u8],
+        player: &Player,
+        map: &Map,
+        textures: &HashMap<String, Texture>,
+        skybox: Option<&Skybox>,
+    ) -> Vec<f32> {
 
     for pixel in frame.chunks_exact_mut(4) {
         pixel[0] = 0;
@@ -166,89 +169,154 @@ pub fn render_world(
 
         // CEILING
 
-        for y in 0..wall_top {
+    for y in 0..wall_top {
 
-            if y < 0
-                || y >= HEIGHT as i32
-            {
-                continue;
-            }
-
-            let p =
-                y as f32
-                    - HEIGHT as f32 / 2.0
-                    - player.pitch;
-
-            if p.abs() < 0.1 {
-                continue;
-            }
-
-            let row_distance =
-                (HEIGHT as f32 / 2.0)
-                    / p.abs();
-
-            let world_x =
-                player.position.x
-                    + ray_dir.x
-                        * row_distance
-                        * 64.0;
-
-            let world_y =
-                player.position.y
-                    + ray_dir.y
-                        * row_distance
-                        * 64.0;
-
-            let tex_x =
-                world_x.abs() as usize
-                    % TEXTURE_SIZE;
-
-            let tex_y =
-                world_y.abs() as usize
-                    % TEXTURE_SIZE;
-
-            let mut active_sector =
-                sector;
-
-            for test_sector in &map.sectors {
-
-                if point_in_sector(
-                    Vec2::new(
-                        world_x,
-                        world_y,
-                    ),
-                    test_sector,
-                ) {
-
-                    active_sector =
-                        test_sector;
-
-                    break;
-                }
-            }
-
-            let ceiling_texture =
-                textures
-                    .get(&active_sector.ceiling_texture)
-                    .or_else(|| textures.get("textureU"))
-                    .unwrap();
-
-            let color =
-                ceiling_texture.sample(
-                    tex_x,
-                    tex_y,
-                );
-
-            let idx =
-                ((y as usize * WIDTH as usize)
-                    + x)
-                    * 4;
-
-            frame[idx] = color[0];
-            frame[idx + 1] = color[1];
-            frame[idx + 2] = color[2];
-            frame[idx + 3] = 255;
+        if y < 0
+            || y >= HEIGHT as i32
+        {
+            continue;
         }
+
+        let idx =
+            ((y as usize * WIDTH as usize)
+                + x)
+                * 4;
+
+        let mut active_sector =
+            sector;
+
+        let p =
+            y as f32
+                - HEIGHT as f32 / 2.0
+                - player.pitch;
+
+        if p.abs() < 0.1 {
+            continue;
+        }
+
+        if active_sector
+            .ceiling_texture
+            ==
+            "sky"
+        {
+
+            if let Some(
+                skybox
+            ) =
+                skybox
+            {
+
+                let focal_length =
+                    (WIDTH as f32 / 2.0)
+                        /
+                        (FOV / 2.0).tan();
+
+                let sky_z =
+                    -p
+                        /
+                        focal_length;
+
+                let direction =
+                    glam::Vec3::new(
+                        ray_dir.x,
+                        ray_dir.y,
+                        sky_z,
+                    );
+
+                let color =
+                    skybox.sample_direction(
+                        direction,
+                    );
+
+                frame[idx] =
+                    color[0];
+
+                frame[idx + 1] =
+                    color[1];
+
+                frame[idx + 2] =
+                    color[2];
+
+                frame[idx + 3] =
+                    255;
+            }
+
+            continue;
+        }
+
+        let row_distance =
+            (HEIGHT as f32 / 2.0)
+                / p.abs();
+
+        let world_x =
+            player.position.x
+                + ray_dir.x
+                    * row_distance
+                    * 64.0;
+
+        let world_y =
+            player.position.y
+                + ray_dir.y
+                    * row_distance
+                    * 64.0;
+
+        for test_sector in &map.sectors {
+
+            if point_in_sector(
+                Vec2::new(
+                    world_x,
+                    world_y,
+                ),
+                test_sector,
+            ) {
+
+                active_sector =
+                    test_sector;
+
+                break;
+            }
+        }
+
+        let tex_x =
+            world_x.abs() as usize
+                % TEXTURE_SIZE;
+
+        let tex_y =
+            world_y.abs() as usize
+                % TEXTURE_SIZE;
+
+        let ceiling_texture =
+            textures
+                .get(
+                    &active_sector
+                        .ceiling_texture
+                )
+                .or_else(
+                    ||
+                    textures.get(
+                        "textureU"
+                    )
+                )
+                .unwrap();
+
+        let color =
+            ceiling_texture.sample(
+                tex_x,
+                tex_y,
+            );
+
+        frame[idx] =
+            color[0];
+
+        frame[idx + 1] =
+            color[1];
+
+        frame[idx + 2] =
+            color[2];
+
+        frame[idx + 3] =
+            255;
+    }
 
         // WALL
 
