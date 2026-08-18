@@ -33,56 +33,56 @@ impl SpriteRegistry {
     }
 
     pub fn load_registry(
-    &mut self,
-    path: &str,
-) {
+        &mut self,
+        path: &str,
+    ) {
 
-    println!(
-        "Loading item registry: {}",
-        path
-    );
+        println!(
+            "Loading item registry: {}",
+            path
+        );
 
-    let content =
-        fs::read_to_string(path)
-            .unwrap();
+        let content =
+            fs::read_to_string(path)
+                .unwrap();
 
-    for line in content.lines() {
+        for line in content.lines() {
 
-        let line =
-            line.trim();
+            let line =
+                line.trim();
 
-        if line.is_empty() {
-            continue;
-        }
+            if line.is_empty() {
+                continue;
+            }
 
-        if line.starts_with('#') {
-            continue;
-        }
+            if line.starts_with('#') {
+                continue;
+            }
 
-        let parts:
-            Vec<&str> =
+            let parts:
+                Vec<&str> =
                 line
                     .split('=')
                     .collect();
 
-        if parts.len() != 2 {
-            continue;
+            if parts.len() != 2 {
+                continue;
+            }
+
+            let id =
+                parts[0]
+                    .trim();
+
+            let definition_path =
+                parts[1]
+                    .trim();
+
+            self.load_sprite_definition(
+                id,
+                definition_path,
+            );
         }
-
-        let id =
-            parts[0]
-                .trim();
-
-        let definition_path =
-            parts[1]
-                .trim();
-
-        self.load_sprite_definition(
-            id,
-            definition_path,
-        );
     }
-}
 
     pub fn get(
         &self,
@@ -130,16 +130,26 @@ impl SpriteRegistry {
         let mut scale_y =
             1.0;
 
-        let mut frames =
+        let mut animations:
+            HashMap<
+                String,
+                HashMap<
+                    SpriteDirection,
+                    Vec<SpriteFrame>,
+                >,
+            > =
             HashMap::new();
+
+        let mut current_animation =
+            String::from("idle");
 
         let mut current_direction:
             Option<SpriteDirection> =
-                None;
+            None;
 
         let mut current_image:
             Option<String> =
-                None;
+            None;
 
         let mut offset_x =
             0;
@@ -153,6 +163,10 @@ impl SpriteRegistry {
                 line.trim();
 
             if line.is_empty() {
+                continue;
+            }
+
+            if line.starts_with('#') {
                 continue;
             }
 
@@ -192,18 +206,18 @@ impl SpriteRegistry {
             }
 
             else if line.starts_with(
-                    "ground_offset"
-                ) {
+                "ground_offset"
+            ) {
 
-                    ground_offset =
-                        line
-                            .split('=')
-                            .nth(1)
-                            .unwrap()
-                            .trim()
-                            .parse()
-                            .unwrap();
-                }
+                ground_offset =
+                    line
+                        .split('=')
+                        .nth(1)
+                        .unwrap()
+                        .trim()
+                        .parse()
+                        .unwrap();
+            }
 
             else if line.starts_with("scale_x") {
 
@@ -229,6 +243,16 @@ impl SpriteRegistry {
                         .unwrap();
             }
 
+            else if line.starts_with("animation") {
+
+                current_animation =
+                    line
+                        .split_whitespace()
+                        .nth(1)
+                        .unwrap()
+                        .to_string();
+            }
+
             else if line.starts_with("frame") {
 
                 if let (
@@ -241,7 +265,7 @@ impl SpriteRegistry {
 
                     let texture =
                         Texture::load(
-                            base_path
+                            &base_path
                                 .join(
                                     image_file
                                 )
@@ -249,20 +273,29 @@ impl SpriteRegistry {
                                 .unwrap()
                         );
 
-                    frames.insert(
+                    animations
+                        .entry(
+                            current_animation
+                                .clone()
+                        )
+                        .or_insert_with(
+                            HashMap::new
+                        )
+                        .entry(direction)
+                        .or_insert_with(
+                            Vec::new
+                        )
+                        .push(
+                            SpriteFrame {
 
-                        direction,
+                                image:
+                                    texture,
 
-                        SpriteFrame {
+                                offset_x,
 
-                            image:
-                                texture,
-
-                            offset_x,
-
-                            offset_y,
-                        },
-                    );
+                                offset_y,
+                            }
+                        );
                 }
 
                 let direction =
@@ -328,26 +361,34 @@ impl SpriteRegistry {
 
             let texture =
                 Texture::load(
-                    base_path
+                    &base_path
                         .join(image_file)
                         .to_str()
                         .unwrap()
                 );
 
-            frames.insert(
+            animations
+                .entry(
+                    current_animation
+                )
+                .or_insert_with(
+                    HashMap::new
+                )
+                .entry(direction)
+                .or_insert_with(
+                    Vec::new
+                )
+                .push(
+                    SpriteFrame {
 
-                direction,
+                        image:
+                            texture,
 
-                SpriteFrame {
+                        offset_x,
 
-                    image:
-                        texture,
-
-                    offset_x,
-
-                    offset_y,
-                },
-            );
+                        offset_y,
+                    }
+                );
         }
 
         self.sprites.insert(
@@ -368,9 +409,8 @@ impl SpriteRegistry {
 
                 scale_y,
 
-                frames,
+                animations,
             }
-
         );
     }
 }

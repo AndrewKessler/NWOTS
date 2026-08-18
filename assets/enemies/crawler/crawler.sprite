@@ -1,0 +1,131 @@
+name = crawler
+
+radius = 16
+height = 32
+ground_offset = 0
+scale_x = 1.0
+scale_y = 1.0
+
+animation idle
+
+frame F
+image = crawler_idle_F.png
+
+frame RF
+image = crawler_idle_RF.png
+
+frame R
+image = crawler_idle_R.png
+
+frame RB
+image = crawler_idle_RB.png
+
+frame B
+image = crawler_idle_B.png
+
+frame LB
+image = crawler_idle_LB.png
+
+frame L
+image = crawler_idle_L.png
+
+frame LF
+image = crawler_idle_LF.png
+
+animation run
+
+frame F
+image = crawler_run_F0.png
+
+frame F
+image = crawler_run_F1.png
+
+frame F
+image = crawler_run_F2.png
+
+frame F
+image = crawler_run_F3.png
+
+frame RF
+image = crawler_run_RF0.png
+
+frame RF
+image = crawler_run_RF1.png
+
+frame RF
+image = crawler_run_RF2.png
+
+frame RF
+image = crawler_run_RF3.png
+
+frame R
+image = crawler_run_R0.png
+
+frame R
+image = crawler_run_R1.png
+
+frame R
+image = crawler_run_R2.png
+
+frame R
+image = crawler_run_R3.png
+
+frame RB
+image = crawler_run_RB0.png
+
+frame RB
+image = crawler_run_RB1.png
+
+frame RB
+image = crawler_run_RB2.png
+
+frame RB
+image = crawler_run_RB3.png
+
+frame B
+image = crawler_run_B0.png
+
+frame B
+image = crawler_run_B1.png
+
+frame B
+image = crawler_run_B2.png
+
+frame B
+image = crawler_run_B3.png
+
+frame LB
+image = crawler_run_LB0.png
+
+frame LB
+image = crawler_run_LB1.png
+
+frame LB
+image = crawler_run_LB2.png
+
+frame LB
+image = crawler_run_LB3.png
+
+frame L
+image = crawler_run_L0.png
+
+frame L
+image = crawler_run_L1.png
+
+frame L
+image = crawler_run_L2.png
+
+frame L
+image = crawler_run_L3.png
+
+frame LF
+image = crawler_run_LF0.png
+
+frame LF
+image = crawler_run_LF1.png
+
+frame LF
+image = crawler_run_LF2.png
+
+frame LF
+image = crawler_run_LF3.png

@@ -5,3 +5,7 @@ colt = assets/items/weapons/colt/colt.txt
 # Decorations
 
 uparrow = assets/items/decorations/uparrow/uparrow.txt
+
+# Enemies
+
+crawler = assets/enemies/crawler/crawler.sprite

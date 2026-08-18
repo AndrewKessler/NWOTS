@@ -22,6 +22,12 @@ pub fn render_sprites(
     registry: &SpriteRegistry,
     zbuffer: &[f32],
 ) {
+    println!(
+        "Rendering sprites: {} items, {} enemies",
+        map.items.len(),
+        map.enemies.len()
+    );
+    // EXISTING ITEMS
 
     for item in &map.items {
 
@@ -51,30 +57,120 @@ pub fn render_sprites(
                 angle
             );
 
-        let sprite_frame =
-            match definition.frames.get(
+        let animation =
+            match definition.animations.get(
+                "idle"
+            ) {
+
+                Some(animation) => animation,
+
+                None => continue,
+            };
+
+        let sprite_frames =
+            match animation.get(
                 &direction
             ) {
+
+                Some(frames) => frames,
+
+                None => continue,
+            };
+
+        let sprite_frame =
+            match sprite_frames.first() {
 
                 Some(frame) => frame,
 
                 None => continue,
             };
 
-            render_sprite(
-                frame,
-                player,
-                item.position,
-                &sprite_frame.image,
-                definition.height,
-                definition.ground_offset,
-                definition.scale_x,
-                definition.scale_y,
-                sprite_frame.offset_x,
-                sprite_frame.offset_y,
-                zbuffer,
+        render_sprite(
+            frame,
+            player,
+            item.position,
+            &sprite_frame.image,
+            definition.height,
+            definition.ground_offset,
+            definition.scale_x,
+            definition.scale_y,
+            sprite_frame.offset_x,
+            sprite_frame.offset_y,
+            zbuffer,
+        );
+    }
+
+    // ENEMIES
+
+    for enemy in &map.enemies {
+
+        let definition =
+            match registry.get(
+                &enemy.enemy_id
+            ) {
+
+                Some(def) => def,
+
+                None => continue,
+            };
+
+        let dx =
+            player.position.x
+                - enemy.position.x;
+
+        let dy =
+            player.position.y
+                - enemy.position.y;
+
+        let angle_to_player =
+            dy.atan2(dx);
+
+        let direction =
+            SpriteDirection::from_angle(
+                angle_to_player
             );
 
+        let animation =
+            match definition.animations.get(
+                "idle"
+            ) {
+
+                Some(animation) => animation,
+
+                None => continue,
+            };
+
+        let sprite_frames =
+            match animation.get(
+                &direction
+            ) {
+
+                Some(frames) => frames,
+
+                None => continue,
+            };
+
+        let sprite_frame =
+            match sprite_frames.first() {
+
+                Some(frame) => frame,
+
+                None => continue,
+            };
+
+        render_sprite(
+            frame,
+            player,
+            enemy.position,
+            &sprite_frame.image,
+            definition.height,
+            definition.ground_offset,
+            definition.scale_x,
+            definition.scale_y,
+            sprite_frame.offset_x,
+            sprite_frame.offset_y,
+            zbuffer,
+        );
     }
 }
 

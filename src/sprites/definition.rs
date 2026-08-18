@@ -16,11 +16,15 @@ pub struct SpriteDefinition {
     pub ground_offset: f32,
 
     pub scale_x: f32,
+
     pub scale_y: f32,
 
-    pub frames:
+    pub animations:
+    HashMap<
+        String,
         HashMap<
             SpriteDirection,
-            SpriteFrame,
+            Vec<SpriteFrame>,
         >,
+    >,
 }

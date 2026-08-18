@@ -13,6 +13,7 @@ mod cutscene;
 mod weapons;
 mod gameplay;
 mod audio;
+mod enemies;
 
 use engine::App;
 

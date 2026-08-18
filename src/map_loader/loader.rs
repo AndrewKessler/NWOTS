@@ -3,6 +3,7 @@ use std::fs;
 use glam::Vec2;
 
 use crate::sprites::SpriteInstance;
+use crate::enemies::EnemyInstance;
 use crate::world::ExitTrigger;
 use crate::world::{
     Map,
@@ -33,6 +34,9 @@ pub fn load_map(
 
     let mut items =
         Vec::<SpriteInstance>::new();
+
+    let mut enemies =
+        Vec::<EnemyInstance>::new();
 
     let mut exits =
         Vec::<ExitTrigger>::new();
@@ -217,6 +221,65 @@ pub fn load_map(
                         );
                     }
 
+            "enemy" => {
+
+                let angle =
+                    if parts.len() >= 5 {
+
+                        parts[4]
+                            .parse()
+                            .unwrap_or(0.0)
+
+                    } else {
+
+                        0.0
+                    };
+
+                enemies.push(
+
+                    EnemyInstance {
+
+                        enemy_id:
+                            parts[1]
+                                .to_string(),
+
+                        position:
+                            Vec2::new(
+                                parts[2]
+                                    .parse()
+                                    .unwrap(),
+
+                                parts[3]
+                                    .parse()
+                                    .unwrap(),
+                            ),
+
+                        angle,
+
+                        animation:
+                            "idle"
+                                .to_string(),
+
+                        animation_frame:
+                            0,
+
+                        animation_timer:
+                            0.0,
+
+                        speed:
+                            0.0,
+                    }
+                );
+
+                println!(
+                    "Loaded enemy: {} at ({}, {}) angle {}",
+                    parts[1],
+                    parts[2],
+                    parts[3],
+                    angle
+                );
+            }
+            
             "exit" => {
 
                         exits.push(
@@ -281,6 +344,7 @@ pub fn load_map(
         spawn,
         spawn_angle,
         items,
+        enemies,
         exits,
         skybox_path,
     }

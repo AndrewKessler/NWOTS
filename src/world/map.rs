@@ -3,6 +3,7 @@ use glam::Vec2;
 use crate::world::Sector;
 use crate::sprites::SpriteInstance;
 use crate::world::ExitTrigger;
+use crate::enemies::EnemyInstance;
 
 pub struct Map {
 
@@ -15,6 +16,8 @@ pub struct Map {
     pub items: Vec<SpriteInstance>,
 
     pub exits: Vec<ExitTrigger>,
+
+    pub enemies: Vec<EnemyInstance>,
 
     pub skybox_path: Option<String>,
 }
