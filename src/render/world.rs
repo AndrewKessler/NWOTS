@@ -41,12 +41,86 @@ pub fn render_world(
     }
 
     let mut zbuffer =
-    vec![
-        f32::MAX;
-        WIDTH as usize
-    ];
+        vec![
+            f32::MAX;
+            WIDTH as usize
+        ];
 
-    for x in 0..WIDTH as usize {
+        // SKYBOX BACKGROUND
+        //
+        // Render the skybox first so that transparent
+        // wall pixels can reveal it later.
+
+        if let Some(
+            skybox
+        ) =
+            skybox
+        {
+
+            for y in 0..HEIGHT as usize {
+
+                let vertical =
+                    y as f32
+                        - HEIGHT as f32 / 2.0
+                        - player.pitch;
+
+                let focal_length =
+                    (WIDTH as f32 / 2.0)
+                        /
+                        (FOV / 2.0).tan();
+
+                let sky_z =
+                    -vertical
+                        /
+                        focal_length;
+
+                for x in 0..WIDTH as usize {
+
+                    let ray_angle =
+                        player.angle
+                            - FOV / 2.0
+                            + (
+                                x as f32
+                                /
+                                WIDTH as f32
+                            )
+                            * FOV;
+
+                    let direction =
+                        glam::Vec3::new(
+                            ray_angle.cos(),
+                            ray_angle.sin(),
+                            sky_z,
+                        );
+
+                    let color =
+                        skybox.sample_direction(
+                            direction,
+                        );
+
+                    let idx =
+                        (
+                            y * WIDTH as usize
+                            + x
+                        )
+                        * 4;
+
+                    frame[idx] =
+                        color[0];
+
+                    frame[idx + 1] =
+                        color[1];
+
+                    frame[idx + 2] =
+                        color[2];
+
+                    frame[idx + 3] =
+                        255;
+                }
+            }
+        }
+
+        for x in 0..WIDTH as usize {
 
         let ray_angle =
             player.angle
@@ -194,56 +268,6 @@ pub fn render_world(
             continue;
         }
 
-        if active_sector
-            .ceiling_texture
-            ==
-            "sky"
-        {
-
-            if let Some(
-                skybox
-            ) =
-                skybox
-            {
-
-                let focal_length =
-                    (WIDTH as f32 / 2.0)
-                        /
-                        (FOV / 2.0).tan();
-
-                let sky_z =
-                    -p
-                        /
-                        focal_length;
-
-                let direction =
-                    glam::Vec3::new(
-                        ray_dir.x,
-                        ray_dir.y,
-                        sky_z,
-                    );
-
-                let color =
-                    skybox.sample_direction(
-                        direction,
-                    );
-
-                frame[idx] =
-                    color[0];
-
-                frame[idx + 1] =
-                    color[1];
-
-                frame[idx + 2] =
-                    color[2];
-
-                frame[idx + 3] =
-                    255;
-            }
-
-            continue;
-        }
-
         let row_distance =
             (HEIGHT as f32 / 2.0)
                 / p.abs();
@@ -275,6 +299,10 @@ pub fn render_world(
 
                 break;
             }
+        }
+
+        if active_sector.ceiling_texture == "sky" {
+            continue;
         }
 
         let tex_x =
@@ -348,15 +376,31 @@ pub fn render_world(
                             texture_y,
                         );
 
+                    // Alpha-mask support.
+                    //
+                    // Fully transparent pixels are not drawn,
+                    // allowing whatever was rendered behind
+                    // the wall to remain visible.
+                    if color[3] < 128 {
+                        continue;
+                    }
+
                     let idx =
                         ((y as usize * WIDTH as usize)
                             + x)
                             * 4;
 
-                    frame[idx] = color[0];
-                    frame[idx + 1] = color[1];
-                    frame[idx + 2] = color[2];
-                    frame[idx + 3] = 255;
+                    frame[idx] =
+                        color[0];
+
+                    frame[idx + 1] =
+                        color[1];
+
+                    frame[idx + 2] =
+                        color[2];
+
+                    frame[idx + 3] =
+                        255;
                 }
             }
 
