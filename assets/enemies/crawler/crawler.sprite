@@ -2,9 +2,9 @@ name = crawler
 
 radius = 16
 height = 64
-ground_offset = 0
+ground_offset = -16
 scale_x = 1.0
-scale_y = 1.0
+scale_y = 0.75
 
 animation idle
 
