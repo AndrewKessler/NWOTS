@@ -22,11 +22,6 @@ pub fn render_sprites(
     registry: &SpriteRegistry,
     zbuffer: &[f32],
 ) {
-    println!(
-        "Rendering sprites: {} items, {} enemies",
-        map.items.len(),
-        map.enemies.len()
-    );
     // EXISTING ITEMS
 
     for item in &map.items {
@@ -147,7 +142,10 @@ pub fn render_sprites(
 
                 Some(frames) => frames,
 
-                None => continue,
+                None => {
+
+                    continue;
+                }
             };
 
         let sprite_frame =

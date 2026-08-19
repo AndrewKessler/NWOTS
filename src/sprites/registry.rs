@@ -245,6 +245,49 @@ impl SpriteRegistry {
 
             else if line.starts_with("animation") {
 
+                if let (
+                    Some(direction),
+                    Some(image_file),
+                ) = (
+                    current_direction,
+                    current_image.take(),
+                ) {
+
+                    let texture =
+                        Texture::load(
+                            &base_path
+                                .join(
+                                    image_file
+                                )
+                                .to_str()
+                                .unwrap()
+                        );
+
+                    animations
+                        .entry(
+                            current_animation
+                                .clone()
+                        )
+                        .or_insert_with(
+                            HashMap::new
+                        )
+                        .entry(direction)
+                        .or_insert_with(
+                            Vec::new
+                        )
+                        .push(
+                            SpriteFrame {
+
+                                image:
+                                    texture,
+
+                                offset_x,
+
+                                offset_y,
+                            }
+                        );
+                }
+
                 current_animation =
                     line
                         .split_whitespace()
