@@ -752,9 +752,19 @@ impl App {
 
                         for enemy in &mut map.enemies {
 
+                            let radius =
+                                sprite_registry
+                                    .get(&enemy.enemy_id)
+                                    .map(|definition|
+                                        definition.radius
+                                    )
+                                    .unwrap_or(16.0);
+
                             crate::enemies::update_enemy(
                                 enemy,
                                 1.0 / 60.0,
+                                &map.sectors,
+                                radius,
                             );
                         }
 

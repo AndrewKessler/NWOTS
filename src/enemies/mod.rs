@@ -4,9 +4,15 @@ pub use instance::EnemyInstance;
 
 use glam::Vec2;
 
+use crate::world::Sector;
+use crate::util::raycast_wall;
+use crate::world::WallType;
+
 pub fn update_enemy(
     enemy: &mut EnemyInstance,
     delta_time: f32,
+    sectors: &[Sector],
+    radius: f32,
 ) {
 
     if enemy.speed <= 0.0 {
@@ -23,24 +29,34 @@ pub fn update_enemy(
         return;
     }
 
-    // Move in the direction
-    // the enemy is facing.
-
     let direction =
         Vec2::new(
             enemy.angle.cos(),
             enemy.angle.sin(),
         );
 
-    enemy.position +=
+    let movement =
         direction
             * enemy.speed
             * delta_time;
 
+    let new_position =
+        enemy.position
+            + movement;
+
+    if can_move_to(
+        enemy.position,
+        new_position,
+        radius,
+        sectors,
+    ) {
+
+        enemy.position =
+            new_position;
+    }
+
     enemy.animation =
         "run".to_string();
-
-    // Four-frame animation.
 
     let frame_duration =
         0.12;
@@ -59,4 +75,55 @@ pub fn update_enemy(
             (enemy.animation_frame + 1)
                 % 4;
     }
+}
+
+fn can_move_to(
+    current: Vec2,
+    target: Vec2,
+    radius: f32,
+    sectors: &[Sector],
+) -> bool {
+
+    let movement =
+        target - current;
+
+    let distance =
+        movement.length();
+
+    if distance <= 0.0 {
+        return true;
+    }
+
+    let direction =
+        movement / distance;
+
+    for sector in sectors {
+
+        for wall in &sector.walls {
+
+            if !matches!(
+                wall.wall_type,
+                WallType::Solid
+            ) {
+                continue;
+            }
+
+            if let Some((wall_distance, _)) =
+                raycast_wall(
+                    current,
+                    direction,
+                    wall,
+                )
+            {
+
+                if wall_distance
+                    <= distance + radius
+                {
+                    return false;
+                }
+            }
+        }
+    }
+
+    true
 }
