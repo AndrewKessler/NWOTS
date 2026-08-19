@@ -15,6 +15,18 @@ use crate::world::{
     Player,
 };
 
+enum RenderSprite<'a> {
+    Item {
+        position: Vec2,
+        sprite_id: &'a str,
+    },
+
+    Enemy {
+        position: Vec2,
+        enemy_id: &'a str,
+    },
+}
+
 pub fn render_sprites(
     frame: &mut [u8],
     player: &Player,
@@ -22,76 +34,42 @@ pub fn render_sprites(
     registry: &SpriteRegistry,
     zbuffer: &[f32],
 ) {
-    // EXISTING ITEMS
+
+    let mut sprites:
+        Vec<(
+            f32,
+            RenderSprite,
+        )> =
+        Vec::new();
+
+    // ITEMS
 
     for item in &map.items {
 
-        let definition =
-            match registry.get(
-                &item.sprite_id
-            ) {
-
-                Some(def) => def,
-
-                None => continue,
-            };
-
         let dx =
-            player.position.x
-                - item.position.x;
+            item.position.x
+                - player.position.x;
 
         let dy =
-            player.position.y
-                - item.position.y;
+            item.position.y
+                - player.position.y;
 
-        let angle =
-            dy.atan2(dx);
+        let distance_squared =
+            dx * dx
+                + dy * dy;
 
-        let direction =
-            SpriteDirection::from_angle(
-                angle
-            );
+        sprites.push(
+            (
+                distance_squared,
 
-        let animation =
-            match definition.animations.get(
-                "idle"
-            ) {
+                RenderSprite::Item {
+                    position:
+                        item.position,
 
-                Some(animation) => animation,
-
-                None => continue,
-            };
-
-        let sprite_frames =
-            match animation.get(
-                &direction
-            ) {
-
-                Some(frames) => frames,
-
-                None => continue,
-            };
-
-        let sprite_frame =
-            match sprite_frames.first() {
-
-                Some(frame) => frame,
-
-                None => continue,
-            };
-
-        render_sprite(
-            frame,
-            player,
-            item.position,
-            &sprite_frame.image,
-            definition.height,
-            definition.ground_offset,
-            definition.scale_x,
-            definition.scale_y,
-            sprite_frame.offset_x,
-            sprite_frame.offset_y,
-            zbuffer,
+                    sprite_id:
+                        &item.sprite_id,
+                },
+            )
         );
     }
 
@@ -99,76 +77,213 @@ pub fn render_sprites(
 
     for enemy in &map.enemies {
 
-        let definition =
-            match registry.get(
-                &enemy.enemy_id
-            ) {
-
-                Some(def) => def,
-
-                None => continue,
-            };
-
         let dx =
-            player.position.x
-                - enemy.position.x;
+            enemy.position.x
+                - player.position.x;
 
         let dy =
-            player.position.y
-                - enemy.position.y;
+            enemy.position.y
+                - player.position.y;
 
-        let angle_to_player =
-            dy.atan2(dx);
+        let distance_squared =
+            dx * dx
+                + dy * dy;
 
-        let direction =
-            SpriteDirection::from_angle(
-                angle_to_player
-            );
+        sprites.push(
+            (
+                distance_squared,
 
-        let animation =
-            match definition.animations.get(
-                "idle"
-            ) {
+                RenderSprite::Enemy {
+                    position:
+                        enemy.position,
 
-                Some(animation) => animation,
-
-                None => continue,
-            };
-
-        let sprite_frames =
-            match animation.get(
-                &direction
-            ) {
-
-                Some(frames) => frames,
-
-                None => {
-
-                    continue;
-                }
-            };
-
-        let sprite_frame =
-            match sprite_frames.first() {
-
-                Some(frame) => frame,
-
-                None => continue,
-            };
-
-        render_sprite(
-            frame,
-            player,
-            enemy.position,
-            &sprite_frame.image,
-            definition.height,
-            definition.ground_offset,
-            definition.scale_x,
-            definition.scale_y,
-            sprite_frame.offset_x,
-            sprite_frame.offset_y,
-            zbuffer,
+                    enemy_id:
+                        &enemy.enemy_id,
+                },
+            )
         );
+    }
+
+    // FAR → NEAR
+    //
+    // Farther sprites are drawn first.
+    // Nearer sprites are drawn afterwards,
+    // so opaque pixels correctly occlude
+    // farther sprites.
+
+    sprites.sort_by(
+        |a, b| {
+            b.0.partial_cmp(
+                &a.0
+            )
+            .unwrap()
+        }
+    );
+
+    for (_, sprite)
+        in sprites
+    {
+
+        match sprite {
+
+            RenderSprite::Item {
+                position,
+                sprite_id,
+            } => {
+
+                let definition =
+                    match registry.get(
+                        sprite_id
+                    ) {
+
+                        Some(def) => def,
+
+                        None => continue,
+                    };
+
+                let dx =
+                    player.position.x
+                        - position.x;
+
+                let dy =
+                    player.position.y
+                        - position.y;
+
+                let angle =
+                    dy.atan2(dx);
+
+                let direction =
+                    SpriteDirection::from_angle(
+                        angle
+                    );
+
+                let animation =
+                    match definition
+                        .animations
+                        .get("idle")
+                    {
+
+                        Some(animation) =>
+                            animation,
+
+                        None => continue,
+                    };
+
+                let sprite_frames =
+                    match animation.get(
+                        &direction
+                    ) {
+
+                        Some(frames) =>
+                            frames,
+
+                        None => continue,
+                    };
+
+                let sprite_frame =
+                    match sprite_frames.first()
+                    {
+
+                        Some(frame) =>
+                            frame,
+
+                        None => continue,
+                    };
+
+                render_sprite(
+                    frame,
+                    player,
+                    position,
+                    &sprite_frame.image,
+                    definition.height,
+                    definition.ground_offset,
+                    definition.scale_x,
+                    definition.scale_y,
+                    sprite_frame.offset_x,
+                    sprite_frame.offset_y,
+                    zbuffer,
+                );
+            }
+
+            RenderSprite::Enemy {
+                position,
+                enemy_id,
+            } => {
+
+                let definition =
+                    match registry.get(
+                        enemy_id
+                    ) {
+
+                        Some(def) => def,
+
+                        None => continue,
+                    };
+
+                let dx =
+                    player.position.x
+                        - position.x;
+
+                let dy =
+                    player.position.y
+                        - position.y;
+
+                let angle_to_player =
+                    dy.atan2(dx);
+
+                let direction =
+                    SpriteDirection::from_angle(
+                        angle_to_player
+                    );
+
+                let animation =
+                    match definition
+                        .animations
+                        .get("idle")
+                    {
+
+                        Some(animation) =>
+                            animation,
+
+                        None => continue,
+                    };
+
+                let sprite_frames =
+                    match animation.get(
+                        &direction
+                    ) {
+
+                        Some(frames) =>
+                            frames,
+
+                        None => continue,
+                    };
+
+                let sprite_frame =
+                    match sprite_frames.first()
+                    {
+
+                        Some(frame) =>
+                            frame,
+
+                        None => continue,
+                    };
+
+                render_sprite(
+                    frame,
+                    player,
+                    position,
+                    &sprite_frame.image,
+                    definition.height,
+                    definition.ground_offset,
+                    definition.scale_x,
+                    definition.scale_y,
+                    sprite_frame.offset_x,
+                    sprite_frame.offset_y,
+                    zbuffer,
+                );
+            }
+        }
     }
 }
 
@@ -253,9 +368,9 @@ fn render_sprite(
             + offset_x;
 
     let projected_ground_offset =
-    (ground_offset
-        / distance)
-        * HEIGHT as f32;
+        (ground_offset
+            / distance)
+            * HEIGHT as f32;
 
     let top =
         ((HEIGHT as f32
@@ -281,6 +396,7 @@ fn render_sprite(
         let col =
             screen_col as usize;
 
+        // Wall geometry always wins.
         if distance
             >= zbuffer[col]
         {
@@ -327,10 +443,17 @@ fn render_sprite(
                     + col)
                     * 4;
 
-            frame[idx] = color[0];
-            frame[idx + 1] = color[1];
-            frame[idx + 2] = color[2];
-            frame[idx + 3] = 255;
+            frame[idx] =
+                color[0];
+
+            frame[idx + 1] =
+                color[1];
+
+            frame[idx + 2] =
+                color[2];
+
+            frame[idx + 3] =
+                255;
         }
     }
 }
