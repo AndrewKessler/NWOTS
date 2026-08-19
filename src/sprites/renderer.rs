@@ -24,6 +24,9 @@ enum RenderSprite<'a> {
     Enemy {
         position: Vec2,
         enemy_id: &'a str,
+        angle: f32,
+        animation: &'a str,
+        animation_frame: usize,
     },
 }
 
@@ -99,6 +102,15 @@ pub fn render_sprites(
 
                     enemy_id:
                         &enemy.enemy_id,
+
+                    angle:
+                        enemy.angle,
+
+                    animation:
+                        &enemy.animation,
+
+                    animation_frame:
+                        enemy.animation_frame,
                 },
             )
         );
@@ -208,6 +220,9 @@ pub fn render_sprites(
             RenderSprite::Enemy {
                 position,
                 enemy_id,
+                angle,
+                animation,
+                animation_frame,
             } => {
 
                 let definition =
@@ -220,26 +235,17 @@ pub fn render_sprites(
                         None => continue,
                     };
 
-                let dx =
-                    player.position.x
-                        - position.x;
-
-                let dy =
-                    player.position.y
-                        - position.y;
-
-                let angle_to_player =
-                    dy.atan2(dx);
-
                 let direction =
                     SpriteDirection::from_angle(
-                        angle_to_player
+                        angle
                     );
 
                 let animation =
                     match definition
                         .animations
-                        .get("idle")
+                        .get(
+                            animation
+                        )
                     {
 
                         Some(animation) =>
@@ -260,8 +266,9 @@ pub fn render_sprites(
                     };
 
                 let sprite_frame =
-                    match sprite_frames.first()
-                    {
+                    match sprite_frames.get(
+                        animation_frame
+                    ) {
 
                         Some(frame) =>
                             frame,

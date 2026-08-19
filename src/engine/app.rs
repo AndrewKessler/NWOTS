@@ -750,6 +750,14 @@ impl App {
                             &map,
                         );
 
+                        for enemy in &mut map.enemies {
+
+                            crate::enemies::update_enemy(
+                                enemy,
+                                1.0 / 60.0,
+                            );
+                        }
+
                         pickup_items(
                             &mut player,
                             &mut map,

@@ -267,7 +267,7 @@ pub fn load_map(
                             0.0,
 
                         speed:
-                            0.0,
+                            20.0,
                     }
                 );
 
