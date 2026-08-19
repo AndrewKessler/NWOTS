@@ -11,6 +11,7 @@ use crate::world::WallType;
 pub fn update_enemy(
     enemy: &mut EnemyInstance,
     delta_time: f32,
+    player_position: Vec2,
     sectors: &[Sector],
     radius: f32,
 ) {
@@ -27,6 +28,20 @@ pub fn update_enemy(
             0.0;
 
         return;
+    }
+
+    let to_player =
+        player_position - enemy.position;
+
+    let distance =
+        to_player.length();
+
+    if distance > radius {
+
+        enemy.angle =
+            to_player.y.atan2(
+                to_player.x
+            );
     }
 
     let direction =
@@ -59,7 +74,7 @@ pub fn update_enemy(
         "run".to_string();
 
     let frame_duration =
-        0.12;
+        0.28;
 
     enemy.animation_timer +=
         delta_time;

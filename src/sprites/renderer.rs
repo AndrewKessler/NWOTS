@@ -235,9 +235,38 @@ pub fn render_sprites(
                         None => continue,
                     };
 
+                let dx =
+                    player.position.x
+                        - position.x;
+
+                let dy =
+                    player.position.y
+                        - position.y;
+
+                let angle_to_player =
+                    dy.atan2(dx);
+
+                let mut relative_angle =
+                    angle_to_player
+                        - angle;
+
+                while relative_angle
+                    > std::f32::consts::PI
+                {
+                    relative_angle -=
+                        std::f32::consts::TAU;
+                }
+
+                while relative_angle
+                    < -std::f32::consts::PI
+                {
+                    relative_angle +=
+                        std::f32::consts::TAU;
+                }
+
                 let direction =
                     SpriteDirection::from_angle(
-                        angle
+                        relative_angle
                     );
 
                 let animation =

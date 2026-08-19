@@ -763,6 +763,7 @@ impl App {
                             crate::enemies::update_enemy(
                                 enemy,
                                 1.0 / 60.0,
+                                player.position,
                                 &map.sectors,
                                 radius,
                             );
