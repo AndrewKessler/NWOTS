@@ -14,9 +14,10 @@ pub fn update_enemy(
     player_position: Vec2,
     sectors: &[Sector],
     radius: f32,
+    speed: f32,
 ) {
 
-    if enemy.speed <= 0.0 {
+    if speed <= 0.0 {
 
         enemy.animation =
             "idle".to_string();
@@ -52,7 +53,7 @@ pub fn update_enemy(
 
     let movement =
         direction
-            * enemy.speed
+            * speed
             * delta_time;
 
     let new_position =
@@ -74,7 +75,7 @@ pub fn update_enemy(
         "run".to_string();
 
     let frame_duration =
-        0.28;
+        0.20;
 
     enemy.animation_timer +=
         delta_time;
@@ -90,6 +91,65 @@ pub fn update_enemy(
             (enemy.animation_frame + 1)
                 % 4;
     }
+}
+
+pub fn damage_enemy(
+    enemy: &mut EnemyInstance,
+    damage: f32,
+) -> bool {
+
+    if enemy.health <= 0.0 {
+        return false;
+    }
+
+    enemy.health -= damage;
+
+    if enemy.health <= 0.0 {
+        enemy.health = 0.0;
+        return true;
+    }
+
+    enemy.animation =
+        "shot".to_string();
+
+    enemy.animation_frame =
+        0;
+
+    enemy.animation_timer =
+        0.0;
+
+    false
+}
+
+pub fn hitscan_enemy(
+    origin: Vec2,
+    direction: Vec2,
+    enemy_position: Vec2,
+    radius: f32,
+) -> Option<f32> {
+
+    let to_enemy =
+        enemy_position - origin;
+
+    let projection =
+        to_enemy.dot(direction);
+
+    if projection <= 0.0 {
+        return None;
+    }
+
+    let closest_point =
+        origin + direction * projection;
+
+    let distance_to_ray =
+        enemy_position
+            .distance(closest_point);
+
+    if distance_to_ray > radius {
+        return None;
+    }
+
+    Some(projection)
 }
 
 fn can_move_to(

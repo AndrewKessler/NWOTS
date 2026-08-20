@@ -130,6 +130,12 @@ impl SpriteRegistry {
         let mut scale_y =
             1.0;
 
+        let mut health =
+            100.0;
+
+        let mut speed =
+            100.0;
+
         let mut animations:
             HashMap<
                 String,
@@ -234,6 +240,30 @@ impl SpriteRegistry {
             else if line.starts_with("scale_y") {
 
                 scale_y =
+                    line
+                        .split('=')
+                        .nth(1)
+                        .unwrap()
+                        .trim()
+                        .parse()
+                        .unwrap();
+            }
+
+            else if line.starts_with("health") {
+
+                health =
+                    line
+                        .split('=')
+                        .nth(1)
+                        .unwrap()
+                        .trim()
+                        .parse()
+                        .unwrap();
+            }
+
+            else if line.starts_with("speed") {
+
+                speed =
                     line
                         .split('=')
                         .nth(1)
@@ -451,6 +481,10 @@ impl SpriteRegistry {
                 scale_x,
 
                 scale_y,
+
+                health,
+
+                speed,
 
                 animations,
             }

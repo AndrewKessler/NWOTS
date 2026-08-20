@@ -2,6 +2,7 @@ use fontdue::Font;
 use std::collections::HashSet;
 use std::fs;
 use std::sync::Arc;
+use glam::Vec2;
 
 use crate::render::draw_world_text;
 use crate::engine::GameState;
@@ -504,23 +505,73 @@ impl App {
                                     > 0
                                 {
 
-                                    player
-                                        .stats
-                                        .ammo
-                                        -= 1;
+                                    player.stats.ammo -= 1;
+
+                                    // HITS CAN
+
+                                    let shoot_direction =
+                                        Vec2::new(
+                                            player.angle.cos(),
+                                            player.angle.sin(),
+                                        );
+
+                                    let mut closest_enemy =
+                                        None;
+
+                                    let mut closest_distance =
+                                        f32::MAX;
+
+                                    for enemy in &map.enemies {
+
+                                        let definition =
+                                            match sprite_registry
+                                                .get(&enemy.enemy_id)
+                                        {
+
+                                            Some(definition) =>
+                                                definition,
+
+                                            None =>
+                                                continue,
+                                        };
+
+                                        if let Some(distance) =
+                                            crate::enemies::hitscan_enemy(
+                                                player.position,
+                                                shoot_direction,
+                                                enemy.position,
+                                                definition.radius,
+                                            )
+                                        {
+
+                                            if distance <
+                                                closest_distance
+                                            {
+                                                closest_distance =
+                                                    distance;
+
+                                                closest_enemy =
+                                                    Some(distance);
+                                            }
+                                        }
+                                    }
+
+                                    if closest_enemy.is_some() {
+
+                                        println!(
+                                            "HIT ENEMY at distance {}",
+                                            closest_distance
+                                        );
+                                    }
 
                                     player.weapon_state =
-                                        crate::weapons::
-                                            WeaponState::Firing;
+                                        crate::weapons::WeaponState::Firing;
 
                                     audio.play_sound(
-                                        &colt_weapon
-                                            .fire_sound
+                                        &colt_weapon.fire_sound
                                     );
 
-                                    println!(
-                                        "Bang!"
-                                    );
+                                    println!("Bang!");
                                 }
 
                                 else {
@@ -752,13 +803,23 @@ impl App {
 
                         for enemy in &mut map.enemies {
 
-                            let radius =
-                                sprite_registry
+                            let definition =
+                                match sprite_registry
                                     .get(&enemy.enemy_id)
-                                    .map(|definition|
-                                        definition.radius
-                                    )
-                                    .unwrap_or(16.0);
+                                {
+
+                                    Some(definition) =>
+                                        definition,
+
+                                    None =>
+                                        continue,
+                                };
+
+                            let radius =
+                                definition.radius;
+
+                            let speed =
+                                definition.speed;
 
                             crate::enemies::update_enemy(
                                 enemy,
@@ -766,6 +827,7 @@ impl App {
                                 player.position,
                                 &map.sectors,
                                 radius,
+                                speed,
                             );
                         }
 

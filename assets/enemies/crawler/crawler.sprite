@@ -6,6 +6,9 @@ ground_offset = -16
 scale_x = 1.0
 scale_y = 0.75
 
+health = 100
+speed = 100.0
+
 animation idle
 
 frame F
@@ -129,3 +132,11 @@ image = crawler_run_LF2.png
 
 frame LF
 image = crawler_run_LF3.png
+
+animation shot
+
+frame F
+image = crawler_shot_F0.png
+
+frame F
+image = crawler_shot_F1.png

@@ -8,11 +8,11 @@ pub struct EnemyInstance {
 
     pub angle: f32,
 
+    pub health: f32,
+
     pub animation: String,
 
     pub animation_frame: usize,
 
     pub animation_timer: f32,
-
-    pub speed: f32,
 }

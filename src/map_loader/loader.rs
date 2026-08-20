@@ -256,6 +256,9 @@ pub fn load_map(
 
                         angle,
 
+                        health:
+                            100.0,
+
                         animation:
                             "idle"
                                 .to_string(),
@@ -266,8 +269,6 @@ pub fn load_map(
                         animation_timer:
                             0.0,
 
-                        speed:
-                            50.0,
                     }
                 );
 

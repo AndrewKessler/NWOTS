@@ -19,6 +19,10 @@ pub struct SpriteDefinition {
 
     pub scale_y: f32,
 
+    pub health: f32,
+
+    pub speed: f32,
+
     pub animations:
     HashMap<
         String,
