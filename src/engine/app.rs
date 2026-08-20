@@ -4,6 +4,7 @@ use std::fs;
 use std::sync::Arc;
 use glam::Vec2;
 
+use crate::util::raycast_wall;
 use crate::render::draw_world_text;
 use crate::engine::GameState;
 use crate::engine::LevelTransition;
@@ -515,13 +516,54 @@ impl App {
                                             player.angle.sin(),
                                         );
 
+                                    // Find nearest solid wall.
+
+                                    let mut wall_distance =
+                                        f32::MAX;
+
+                                    for sector in &map.sectors {
+
+                                        for wall in &sector.walls {
+
+                                            if !matches!(
+                                                wall.wall_type,
+                                                crate::world::WallType::Solid
+                                            ) {
+                                                continue;
+                                            }
+
+                                            if let Some((distance, _)) =
+                                                raycast_wall(
+                                                    player.position,
+                                                    shoot_direction,
+                                                    wall,
+                                                )
+                                            {
+
+                                                if distance <
+                                                    wall_distance
+                                                {
+                                                    wall_distance =
+                                                        distance;
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // Find nearest enemy.
+
                                     let mut closest_enemy =
+                                        None;
+
+                                    let mut closest_enemy_index =
                                         None;
 
                                     let mut closest_distance =
                                         f32::MAX;
 
-                                    for enemy in &map.enemies {
+                                    for (index, enemy) in
+                                        map.enemies.iter().enumerate()
+                                    {
 
                                         let definition =
                                             match sprite_registry
@@ -552,16 +594,50 @@ impl App {
 
                                                 closest_enemy =
                                                     Some(distance);
+
+                                                closest_enemy_index =
+                                                    Some(index);
                                             }
                                         }
                                     }
 
-                                    if closest_enemy.is_some() {
+                                    if let Some(enemy_distance) =
+                                        closest_enemy
+                                    {
 
-                                        println!(
-                                            "HIT ENEMY at distance {}",
-                                            closest_distance
-                                        );
+                                        if enemy_distance <
+                                            wall_distance
+                                        {
+
+                                            if let Some(index) =
+                                                closest_enemy_index
+                                            {
+
+                                                let enemy =
+                                                    &mut map.enemies[index];
+
+                                                let died =
+                                                    crate::enemies::damage_enemy(
+                                                        enemy,
+                                                        25.0,
+                                                    );
+
+                                                if died {
+
+                                                    println!(
+                                                        "Crawler killed"
+                                                    );
+                                                }
+
+                                                else {
+
+                                                    println!(
+                                                        "Crawler hit: health = {}",
+                                                        enemy.health
+                                                    );
+                                                }
+                                            }
+                                        }
                                     }
 
                                     player.weapon_state =
