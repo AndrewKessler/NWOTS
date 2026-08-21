@@ -565,6 +565,10 @@ impl App {
                                         map.enemies.iter().enumerate()
                                     {
 
+                                        if enemy.health <= 0.0 {
+                                            continue;
+                                        }
+
                                         let definition =
                                             match sprite_registry
                                                 .get(&enemy.enemy_id)
@@ -639,8 +643,6 @@ impl App {
                                             }
                                         }
                                     }
-
-                                    map.enemies.retain(|enemy| enemy.health > 0.0);
 
                                     player.weapon_state =
                                         crate::weapons::WeaponState::Firing;
@@ -917,6 +919,15 @@ impl App {
                                     )
                                     .unwrap_or(0.15);
 
+                            let dying_frame_duration =
+                                definition
+                                    .animations
+                                    .get("dying")
+                                    .map(|animation|
+                                        animation.frame_duration
+                                    )
+                                    .unwrap_or(0.15);
+
                             crate::enemies::update_enemy(
                                 enemy,
                                 1.0 / 60.0,
@@ -926,6 +937,7 @@ impl App {
                                 speed,
                                 run_frame_duration,
                                 shot_frame_duration,
+                                dying_frame_duration,
                             );
                         }
 

@@ -145,3 +145,56 @@ image = crawler_shot_F0.png
 
 frame F
 image = crawler_shot_F1.png
+
+
+animation dying
+frame_duration = 0.15
+
+frame F
+image = crawler_dying_F0.png
+
+frame F
+image = crawler_dying_F1.png
+
+frame F
+image = crawler_dying_F2.png
+
+frame F
+image = crawler_dying_F3.png
+
+frame F
+image = crawler_dying_F4.png
+
+frame F
+image = crawler_dying_F5.png
+
+frame F
+image = crawler_dying_F6.png
+
+
+animation corpse
+frame_duration = 1.0
+
+frame F
+image = crawler_corpse_F.png
+
+frame RF
+image = crawler_corpse_RF.png
+
+frame R
+image = crawler_corpse_R.png
+
+frame RB
+image = crawler_corpse_RB.png
+
+frame B
+image = crawler_corpse_B.png
+
+frame LB
+image = crawler_corpse_LB.png
+
+frame L
+image = crawler_corpse_L.png
+
+frame LF
+image = crawler_corpse_LF.png

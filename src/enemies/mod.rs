@@ -17,7 +17,46 @@ pub fn update_enemy(
     speed: f32,
     run_frame_duration: f32,
     shot_frame_duration: f32,
+    dying_frame_duration: f32,
 ) {
+
+    if enemy.animation == "dying" {
+
+        enemy.animation_timer +=
+            delta_time;
+
+        while enemy.animation_timer
+            >= dying_frame_duration
+        {
+
+            enemy.animation_timer -=
+                dying_frame_duration;
+
+            enemy.animation_frame +=
+                1;
+
+            if enemy.animation_frame >= 7 {
+
+                enemy.animation =
+                    "corpse".to_string();
+
+                enemy.animation_frame =
+                    0;
+
+                enemy.animation_timer =
+                    0.0;
+
+                break;
+            }
+        }
+
+        return;
+    }
+
+    if enemy.animation == "corpse" {
+
+        return;
+    }
 
     if speed <= 0.0 {
 
@@ -140,7 +179,18 @@ pub fn damage_enemy(
     enemy.health -= damage;
 
     if enemy.health <= 0.0 {
+
         enemy.health = 0.0;
+
+        enemy.animation =
+            "dying".to_string();
+
+        enemy.animation_frame =
+            0;
+
+        enemy.animation_timer =
+            0.0;
+
         return true;
     }
 
