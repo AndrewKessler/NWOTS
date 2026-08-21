@@ -182,7 +182,7 @@ pub fn render_sprites(
                     };
 
                 let sprite_frames =
-                    match animation.get(
+                    match animation.frames.get(
                         &direction
                     ) {
 
@@ -284,7 +284,7 @@ pub fn render_sprites(
                     };
 
                 let sprite_frames =
-                    match animation.get(
+                    match animation.frames.get(
                         &direction
                     ) {
 

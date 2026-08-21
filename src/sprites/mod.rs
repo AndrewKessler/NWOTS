@@ -6,7 +6,10 @@ pub mod registry;
 pub mod renderer;
 
 pub use renderer::render_sprites;
-pub use definition::SpriteDefinition;
+pub use definition::{
+    SpriteAnimation,
+    SpriteDefinition,
+};
 pub use direction::SpriteDirection;
 pub use frame::SpriteFrame;
 pub use instance::SpriteInstance;

@@ -7,6 +7,7 @@ use std::{
 use crate::assets::Texture;
 
 use crate::sprites::{
+    SpriteAnimation,
     SpriteDefinition,
     SpriteDirection,
     SpriteFrame,
@@ -139,15 +140,15 @@ impl SpriteRegistry {
         let mut animations:
             HashMap<
                 String,
-                HashMap<
-                    SpriteDirection,
-                    Vec<SpriteFrame>,
-                >,
+                SpriteAnimation,
             > =
             HashMap::new();
 
         let mut current_animation =
             String::from("idle");
+
+        let mut current_frame_duration =
+            0.20;
 
         let mut current_direction:
             Option<SpriteDirection> =
@@ -273,6 +274,20 @@ impl SpriteRegistry {
                         .unwrap();
             }
 
+            else if line.starts_with(
+                "frame_duration"
+            ) {
+
+                current_frame_duration =
+                    line
+                        .split('=')
+                        .nth(1)
+                        .unwrap()
+                        .trim()
+                        .parse()
+                        .unwrap();
+            }
+
             else if line.starts_with("animation") {
 
                 if let (
@@ -298,9 +313,18 @@ impl SpriteRegistry {
                             current_animation
                                 .clone()
                         )
-                        .or_insert_with(
-                            HashMap::new
-                        )
+                        .or_insert_with(|| {
+
+                            SpriteAnimation {
+
+                                frame_duration:
+                                    current_frame_duration,
+
+                                frames:
+                                    HashMap::new(),
+                            }
+                        })
+                        .frames
                         .entry(direction)
                         .or_insert_with(
                             Vec::new
@@ -351,9 +375,18 @@ impl SpriteRegistry {
                             current_animation
                                 .clone()
                         )
-                        .or_insert_with(
-                            HashMap::new
-                        )
+                        .or_insert_with(|| {
+
+                            SpriteAnimation {
+
+                                frame_duration:
+                                    current_frame_duration,
+
+                                frames:
+                                    HashMap::new(),
+                            }
+                        })
+                        .frames
                         .entry(direction)
                         .or_insert_with(
                             Vec::new
@@ -443,10 +476,20 @@ impl SpriteRegistry {
             animations
                 .entry(
                     current_animation
+                        .clone()
                 )
-                .or_insert_with(
-                    HashMap::new
-                )
+                .or_insert_with(|| {
+
+                    SpriteAnimation {
+
+                        frame_duration:
+                            current_frame_duration,
+
+                        frames:
+                            HashMap::new(),
+                    }
+                })
+                .frames
                 .entry(direction)
                 .or_insert_with(
                     Vec::new

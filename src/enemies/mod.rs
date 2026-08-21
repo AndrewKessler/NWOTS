@@ -15,6 +15,8 @@ pub fn update_enemy(
     sectors: &[Sector],
     radius: f32,
     speed: f32,
+    run_frame_duration: f32,
+    shot_frame_duration: f32,
 ) {
 
     if speed <= 0.0 {
@@ -51,6 +53,42 @@ pub fn update_enemy(
             enemy.angle.sin(),
         );
 
+    if enemy.animation == "shot" {
+
+    let frame_duration =
+        shot_frame_duration;
+
+    enemy.animation_timer +=
+        delta_time;
+
+    while enemy.animation_timer
+        >= frame_duration
+    {
+
+        enemy.animation_timer -=
+            frame_duration;
+
+        enemy.animation_frame +=
+            1;
+
+        if enemy.animation_frame >= 2 {
+
+            enemy.animation =
+                "run".to_string();
+
+            enemy.animation_frame =
+                0;
+
+            enemy.animation_timer =
+                0.0;
+
+            break;
+        }
+    }
+
+    return;
+}
+
     let movement =
         direction
             * speed
@@ -74,18 +112,15 @@ pub fn update_enemy(
     enemy.animation =
         "run".to_string();
 
-    let frame_duration =
-        0.20;
-
     enemy.animation_timer +=
         delta_time;
 
     while enemy.animation_timer
-        >= frame_duration
+        >= run_frame_duration
     {
 
         enemy.animation_timer -=
-            frame_duration;
+            run_frame_duration;
 
         enemy.animation_frame =
             (enemy.animation_frame + 1)

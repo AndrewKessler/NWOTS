@@ -10,6 +10,7 @@ health = 100
 speed = 100.0
 
 animation idle
+frame_duration = 0.50
 
 frame F
 image = crawler_idle_F.png
@@ -35,7 +36,9 @@ image = crawler_idle_L.png
 frame LF
 image = crawler_idle_LF.png
 
+
 animation run
+frame_duration = 0.20
 
 frame F
 image = crawler_run_F0.png
@@ -133,7 +136,9 @@ image = crawler_run_LF2.png
 frame LF
 image = crawler_run_LF3.png
 
+
 animation shot
+frame_duration = 0.15
 
 frame F
 image = crawler_shot_F0.png

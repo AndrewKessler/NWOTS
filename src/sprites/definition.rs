@@ -5,6 +5,17 @@ use crate::sprites::{
     SpriteFrame,
 };
 
+pub struct SpriteAnimation {
+
+    pub frame_duration: f32,
+
+    pub frames:
+    HashMap<
+        SpriteDirection,
+        Vec<SpriteFrame>,
+    >,
+}
+
 pub struct SpriteDefinition {
 
     pub name: String,
@@ -24,11 +35,9 @@ pub struct SpriteDefinition {
     pub speed: f32,
 
     pub animations:
-    HashMap<
-        String,
         HashMap<
-            SpriteDirection,
-            Vec<SpriteFrame>,
+            String,
+            SpriteAnimation,
         >,
-    >,
+        
 }
