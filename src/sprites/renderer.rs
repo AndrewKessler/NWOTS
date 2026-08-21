@@ -311,7 +311,7 @@ pub fn render_sprites(
                     position,
                     &sprite_frame.image,
                     definition.height,
-                    definition.ground_offset,
+                    animation.ground_offset,
                     definition.scale_x,
                     definition.scale_y,
                     sprite_frame.offset_x,
@@ -385,16 +385,22 @@ fn render_sprite(
             / FOV)
             * WIDTH as f32;
 
+    let base_sprite_height =
+    (HEIGHT as f32
+        * world_height)
+        / distance;
+
+    let base_sprite_width =
+        base_sprite_height
+            * texture.width as f32
+            / texture.height as f32;
+
     let sprite_height =
-        ((HEIGHT as f32
-            * world_height)
-            / distance)
+        base_sprite_height
             * scale_y;
 
     let sprite_width =
-        (sprite_height
-            * texture.width as f32
-            / texture.height as f32)
+        base_sprite_width
             * scale_x;
 
     let left =

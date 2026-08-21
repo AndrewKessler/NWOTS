@@ -9,6 +9,8 @@ pub struct SpriteAnimation {
 
     pub frame_duration: f32,
 
+    pub ground_offset: f32,
+
     pub frames:
     HashMap<
         SpriteDirection,
@@ -39,5 +41,5 @@ pub struct SpriteDefinition {
             String,
             SpriteAnimation,
         >,
-        
+
 }

@@ -2,8 +2,8 @@ name = crawler
 
 radius = 16
 height = 64
-ground_offset = -16
-scale_x = 1.0
+ground_offset = 0
+scale_x = 0.75
 scale_y = 0.75
 
 health = 100
@@ -11,6 +11,7 @@ speed = 100.0
 
 animation idle
 frame_duration = 0.50
+ground_offset = -16
 
 frame F
 image = crawler_idle_F.png
@@ -36,9 +37,9 @@ image = crawler_idle_L.png
 frame LF
 image = crawler_idle_LF.png
 
-
 animation run
 frame_duration = 0.20
+ground_offset = -16
 
 frame F
 image = crawler_run_F0.png
@@ -136,9 +137,9 @@ image = crawler_run_LF2.png
 frame LF
 image = crawler_run_LF3.png
 
-
 animation shot
 frame_duration = 0.15
+ground_offset = -16
 
 frame F
 image = crawler_shot_F0.png
@@ -146,9 +147,9 @@ image = crawler_shot_F0.png
 frame F
 image = crawler_shot_F1.png
 
-
 animation dying
 frame_duration = 0.15
+ground_offset = -16
 
 frame F
 image = crawler_dying_F0.png
@@ -171,9 +172,9 @@ image = crawler_dying_F5.png
 frame F
 image = crawler_dying_F6.png
 
-
 animation corpse
 frame_duration = 1.0
+ground_offset = -24
 
 frame F
 image = crawler_corpse_F.png

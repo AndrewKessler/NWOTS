@@ -150,6 +150,12 @@ impl SpriteRegistry {
         let mut current_frame_duration =
             0.20;
 
+        let mut current_ground_offset =
+            ground_offset;
+
+        let mut in_animation =
+            false;
+
         let mut current_direction:
             Option<SpriteDirection> =
             None;
@@ -216,7 +222,7 @@ impl SpriteRegistry {
                 "ground_offset"
             ) {
 
-                ground_offset =
+                let value =
                     line
                         .split('=')
                         .nth(1)
@@ -224,6 +230,20 @@ impl SpriteRegistry {
                         .trim()
                         .parse()
                         .unwrap();
+
+                if in_animation {
+
+                    current_ground_offset =
+                        value;
+
+                } else {
+
+                    ground_offset =
+                        value;
+
+                    current_ground_offset =
+                        value;
+                }
             }
 
             else if line.starts_with("scale_x") {
@@ -290,6 +310,12 @@ impl SpriteRegistry {
 
             else if line.starts_with("animation") {
 
+                in_animation =
+                    true;
+
+                current_ground_offset =
+                    ground_offset;
+
                 if let (
                     Some(direction),
                     Some(image_file),
@@ -319,6 +345,9 @@ impl SpriteRegistry {
 
                                 frame_duration:
                                     current_frame_duration,
+
+                                ground_offset:
+                                    current_ground_offset,
 
                                 frames:
                                     HashMap::new(),
@@ -381,6 +410,9 @@ impl SpriteRegistry {
 
                                 frame_duration:
                                     current_frame_duration,
+
+                                ground_offset:
+                                    current_ground_offset,
 
                                 frames:
                                     HashMap::new(),
@@ -484,6 +516,9 @@ impl SpriteRegistry {
 
                         frame_duration:
                             current_frame_duration,
+
+                        ground_offset:
+                            current_ground_offset,
 
                         frames:
                             HashMap::new(),
