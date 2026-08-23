@@ -9,18 +9,18 @@ music = ""
 skippable = true
 
 [menu]
-font = "assets/fonts/scigoth.ttf"
+font = "assets/fonts/Saber.ttf"
 background = "assets/menu/background.png"
 music = "assets/music/menu.mp3"
 move_sound = "assets/music/menu_move.mp3"
 
-start_message = "Start Game"
-save_message = "Save Game"
-load_message = "Load Game"
+start_message = "START GAME"
+save_message = "SAVE GAME"
+load_message = "LOAD GAME"
 exit_message = "EXIT"
 
 [[episode]]
-title = "Minerva Base"
+title = "FANUM NINE"
 
 [[episode.maps]]
 title = "Arrival"

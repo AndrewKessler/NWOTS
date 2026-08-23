@@ -80,4 +80,6 @@ ceiling metalroof
 
 portal 128 512 128 512 sector_2
 
+enemy crawler 360 600 0
+
 spawn 160 544 0
