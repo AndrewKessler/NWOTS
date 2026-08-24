@@ -264,12 +264,7 @@ pub fn render_sprites(
                         std::f32::consts::TAU;
                 }
 
-                let direction =
-                    SpriteDirection::from_angle(
-                        relative_angle
-                    );
-
-                let animation =
+                let selected_animation =
                     match definition
                         .animations
                         .get(
@@ -283,8 +278,20 @@ pub fn render_sprites(
                         None => continue,
                     };
 
+                let direction =
+                    if animation == "exploding" {
+
+                        SpriteDirection::F
+
+                    } else {
+
+                        SpriteDirection::from_angle(
+                            relative_angle
+                        )
+                    };
+
                 let sprite_frames =
-                    match animation.frames.get(
+                    match selected_animation.frames.get(
                         &direction
                     ) {
 
@@ -311,7 +318,7 @@ pub fn render_sprites(
                     position,
                     &sprite_frame.image,
                     definition.height,
-                    animation.ground_offset,
+                    selected_animation.ground_offset,
                     definition.scale_x,
                     definition.scale_y,
                     sprite_frame.offset_x,

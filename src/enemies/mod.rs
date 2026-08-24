@@ -20,6 +20,39 @@ pub fn update_enemy(
     dying_frame_duration: f32,
 ) {
 
+    if enemy.animation == "exploding" {
+
+        enemy.animation_timer +=
+            delta_time;
+
+        while enemy.animation_timer
+            >= 0.12
+        {
+
+            enemy.animation_timer -=
+                0.12;
+
+            enemy.animation_frame +=
+                1;
+
+            if enemy.animation_frame >= 6 {
+
+                enemy.animation =
+                    "destroyed".to_string();
+
+                enemy.animation_frame =
+                    0;
+
+                enemy.animation_timer =
+                    0.0;
+
+                break;
+            }
+        }
+
+        return;
+    }
+
     if enemy.animation == "dying" {
 
         enemy.animation_timer +=
@@ -170,20 +203,30 @@ pub fn update_enemy(
 pub fn damage_enemy(
     enemy: &mut EnemyInstance,
     damage: f32,
+    actor_type: &str,
 ) -> bool {
 
     if enemy.health <= 0.0 {
         return false;
     }
 
-    enemy.health -= damage;
+    enemy.health -=
+        damage;
 
     if enemy.health <= 0.0 {
 
         enemy.health = 0.0;
 
-        enemy.animation =
-            "dying".to_string();
+        if actor_type == "explosive" {
+
+            enemy.animation =
+                "exploding".to_string();
+
+        } else {
+
+            enemy.animation =
+                "dying".to_string();
+        }
 
         enemy.animation_frame =
             0;

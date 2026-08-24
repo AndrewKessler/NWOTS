@@ -458,9 +458,11 @@ impl App {
                             button,
 
                             ..
+
                         },
 
                     ..
+
                 } => {
 
                     if button
@@ -506,7 +508,8 @@ impl App {
                                     > 0
                                 {
 
-                                    player.stats.ammo -= 1;
+                                    player.stats.ammo -=
+                                        1;
 
                                     // HITS CAN
 
@@ -521,9 +524,13 @@ impl App {
                                     let mut wall_distance =
                                         f32::MAX;
 
-                                    for sector in &map.sectors {
+                                    for sector in
+                                        &map.sectors
+                                    {
 
-                                        for wall in &sector.walls {
+                                        for wall in
+                                            &sector.walls
+                                        {
 
                                             if !matches!(
                                                 wall.wall_type,
@@ -532,7 +539,9 @@ impl App {
                                                 continue;
                                             }
 
-                                            if let Some((distance, _)) =
+                                            if let Some(
+                                                (distance, _)
+                                            ) =
                                                 raycast_wall(
                                                     player.position,
                                                     shoot_direction,
@@ -540,9 +549,11 @@ impl App {
                                                 )
                                             {
 
-                                                if distance <
+                                                if distance
+                                                    <
                                                     wall_distance
                                                 {
+
                                                     wall_distance =
                                                         distance;
                                                 }
@@ -561,38 +572,52 @@ impl App {
                                     let mut closest_distance =
                                         f32::MAX;
 
-                                    for (index, enemy) in
-                                        map.enemies.iter().enumerate()
+                                    for (
+                                        index,
+                                        enemy
+                                    ) in
+                                        map.enemies
+                                            .iter()
+                                            .enumerate()
                                     {
 
-                                        if enemy.health <= 0.0 {
+                                        if enemy.health <=
+                                            0.0
+                                        {
                                             continue;
                                         }
 
                                         let definition =
                                             match sprite_registry
-                                                .get(&enemy.enemy_id)
+                                                .get(
+                                                    &enemy.enemy_id
+                                                )
+                                            {
+
+                                                Some(definition) =>
+                                                    definition,
+
+                                                None =>
+                                                    continue,
+                                            };
+
+                                        if let Some(
+                                            distance
+                                        ) =
+                                            crate::enemies::
+                                                hitscan_enemy(
+                                                    player.position,
+                                                    shoot_direction,
+                                                    enemy.position,
+                                                    definition.radius,
+                                                )
                                         {
 
-                                            Some(definition) =>
-                                                definition,
-
-                                            None =>
-                                                continue,
-                                        };
-
-                                        if let Some(distance) =
-                                            crate::enemies::hitscan_enemy(
-                                                player.position,
-                                                shoot_direction,
-                                                enemy.position,
-                                                definition.radius,
-                                            )
-                                        {
-
-                                            if distance <
+                                            if distance
+                                                <
                                                 closest_distance
                                             {
+
                                                 closest_distance =
                                                     distance;
 
@@ -605,56 +630,114 @@ impl App {
                                         }
                                     }
 
-                                    if let Some(enemy_distance) =
+                                    if let Some(
+                                        enemy_distance
+                                    ) =
                                         closest_enemy
                                     {
 
-                                        if enemy_distance <
+                                        if enemy_distance
+                                            <
                                             wall_distance
                                         {
 
-                                            if let Some(index) =
+                                            if let Some(
+                                                index
+                                            ) =
                                                 closest_enemy_index
                                             {
 
                                                 let enemy =
-                                                    &mut map.enemies[index];
+                                                    &mut map.enemies[
+                                                        index
+                                                    ];
 
-                                                let died =
-                                                    crate::enemies::damage_enemy(
-                                                        enemy,
-                                                        25.0,
-                                                    );
+                                                if let Some(
+                                                    definition
+                                                ) =
+                                                    sprite_registry
+                                                        .get(
+                                                            &enemy.enemy_id
+                                                        )
+                                                {
 
-                                                if died {
+                                                    let actor_type =
+                                                        definition
+                                                            .actor_type
+                                                            .clone();
 
-                                                    println!(
-                                                        "Crawler killed"
-                                                    );
-                                                }
+                                                    let explosion_sound =
+                                                        definition
+                                                            .explosion_sound
+                                                            .clone();
 
-                                                else {
+                                                    let died =
+                                                        crate::enemies::
+                                                            damage_enemy(
+                                                                enemy,
+                                                                25.0,
+                                                                &actor_type,
+                                                            );
 
-                                                    println!(
-                                                        "Crawler hit: health = {}",
-                                                        enemy.health
-                                                    );
+                                                    if died {
+
+                                                        if actor_type
+                                                            ==
+                                                            "explosive"
+                                                        {
+
+                                                            if let Some(
+                                                                sound
+                                                            ) =
+                                                                explosion_sound
+                                                            {
+
+                                                                let sound_path =
+                                                                    format!(
+                                                                        "assets/enemies/{}/{}",
+                                                                        enemy.enemy_id,
+                                                                        sound
+                                                                    );
+
+                                                                audio.play_sound(
+                                                                    &sound_path
+                                                                );
+                                                            }
+
+                                                            println!(
+                                                                "Explosive barrel triggered"
+                                                            );
+
+                                                        } else {
+
+                                                            println!(
+                                                                "Crawler killed"
+                                                            );
+                                                        }
+
+                                                    } else {
+
+                                                        println!(
+                                                            "Enemy hit: health = {}",
+                                                            enemy.health
+                                                        );
+                                                    }
                                                 }
                                             }
                                         }
                                     }
 
                                     player.weapon_state =
-                                        crate::weapons::WeaponState::Firing;
+                                        crate::weapons::
+                                            WeaponState::Firing;
 
                                     audio.play_sound(
                                         &colt_weapon.fire_sound
                                     );
 
                                     println!("Bang!");
-                                }
 
-                                else {
+                                } else {
 
                                     println!(
                                         "Click!"
@@ -663,7 +746,6 @@ impl App {
                             }
                         }
                     }
-
                 }
 
                 Event::WindowEvent {
@@ -879,6 +961,12 @@ impl App {
                             &mut player,
                             &keys,
                             &map,
+                        );
+
+                        map.enemies.retain(
+                            |enemy| {
+                                enemy.animation != "destroyed"
+                            }
                         );
 
                         for enemy in &mut map.enemies {
