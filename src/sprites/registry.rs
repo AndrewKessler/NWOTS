@@ -137,6 +137,19 @@ impl SpriteRegistry {
         let mut speed =
             100.0;
 
+        let mut actor_type =
+            String::from("enemy");
+
+        let mut explosion_damage =
+            0.0;
+
+        let mut explosion_radius =
+            0.0;
+
+        let mut explosion_sound:
+            Option<String> =
+            None;
+
         let mut animations:
             HashMap<
                 String,
@@ -293,6 +306,54 @@ impl SpriteRegistry {
                         .parse()
                         .unwrap();
             }
+
+            else if line.starts_with("actor_type") {
+
+                actor_type =
+                    line
+                        .split('=')
+                        .nth(1)
+                        .unwrap()
+                        .trim()
+                        .to_string();
+            }
+
+            else if line.starts_with("explosion_damage") {
+
+                explosion_damage =
+                    line
+                        .split('=')
+                        .nth(1)
+                        .unwrap()
+                        .trim()
+                        .parse()
+                        .unwrap();
+            }
+
+            else if line.starts_with("explosion_radius") {
+
+                explosion_radius =
+                    line
+                        .split('=')
+                        .nth(1)
+                        .unwrap()
+                        .trim()
+                        .parse()
+                        .unwrap();
+            }
+
+            else if line.starts_with("explosion_sound") {
+
+                explosion_sound =
+                    Some(
+                        line
+                            .split('=')
+                            .nth(1)
+                            .unwrap()
+                            .trim()
+                            .to_string()
+                    );
+}
 
             else if line.starts_with(
                 "frame_duration"
@@ -563,6 +624,14 @@ impl SpriteRegistry {
                 health,
 
                 speed,
+
+                actor_type,
+
+                explosion_damage,
+
+                explosion_radius,
+
+                explosion_sound,
 
                 animations,
             }

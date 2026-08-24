@@ -1,0 +1,67 @@
+name = barrel
+
+radius = 20
+height = 64
+ground_offset = -16
+scale_x = 0.5
+scale_y = 0.5
+
+health = 75
+speed = 0.0
+
+actor_type = explosive
+
+explosion_damage = 100
+explosion_radius = 96
+explosion_sound = barrel_explosion.mp3
+
+animation idle
+frame_duration = 1.0
+ground_offset = -16
+
+frame F
+image = barrel_idle_F.png
+
+frame RF
+image = barrel_idle_RF.png
+
+frame R
+image = barrel_idle_R.png
+
+frame RB
+image = barrel_idle_RB.png
+
+frame B
+image = barrel_idle_B.png
+
+frame LB
+image = barrel_idle_LB.png
+
+frame L
+image = barrel_idle_L.png
+
+frame LF
+image = barrel_idle_LF.png
+
+
+animation exploding
+frame_duration = 0.12
+ground_offset = -16
+
+frame F
+image = barrel_explode_F0.png
+
+frame F
+image = barrel_explode_F1.png
+
+frame F
+image = barrel_explode_F2.png
+
+frame F
+image = barrel_explode_F3.png
+
+frame F
+image = barrel_explode_F4.png
+
+frame F
+image = barrel_explode_F5.png

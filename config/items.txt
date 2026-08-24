@@ -9,3 +9,5 @@ uparrow = assets/items/decorations/uparrow/uparrow.txt
 # Enemies
 
 crawler = assets/enemies/crawler/crawler.sprite
+
+barrel = assets/enemies/barrel/barrel.sprite

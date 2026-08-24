@@ -36,10 +36,17 @@ pub struct SpriteDefinition {
 
     pub speed: f32,
 
-    pub animations:
-        HashMap<
-            String,
-            SpriteAnimation,
-        >,
+    pub actor_type: String,
 
+    pub explosion_damage: f32,
+
+    pub explosion_radius: f32,
+
+    pub explosion_sound: Option<String>,
+
+    pub animations:
+    HashMap<
+        String,
+        SpriteAnimation,
+    >,
 }

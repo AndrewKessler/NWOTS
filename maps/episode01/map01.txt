@@ -42,6 +42,8 @@ wall 1856 1088 1856 1152 exit solid
 
 enemy crawler 1200 350 0
 
+enemy barrel 800 224 0
+
 exit 1800 1120 64 maps/episode01/map02.txt Press_E_To_Exit
 
 wall 1856 1152 1856 1280 brickwall solid
