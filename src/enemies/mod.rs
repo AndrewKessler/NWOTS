@@ -31,7 +31,7 @@ pub fn update_enemy(
         {
 
             enemy.animation_timer -=
-                0.12;
+                exploding_frame_duration;
 
             enemy.animation_frame +=
                 1;
