@@ -284,7 +284,8 @@ impl App {
                 &config
                     .episode[0]
                     .maps[0]
-                    .file
+                    .file,
+                &sprite_registry,
             );
 
         let mut skybox =
@@ -925,7 +926,8 @@ impl App {
 
                                 map =
                                     load_map(
-                                        &transition.next_map
+                                        &transition.next_map,
+                                        &sprite_registry,
                                     );
 
                                 skybox =
@@ -1016,6 +1018,15 @@ impl App {
                                     )
                                     .unwrap_or(0.15);
 
+                            let exploding_frame_duration =
+                                definition
+                                    .animations
+                                    .get("exploding")
+                                    .map(|animation|
+                                        animation.frame_duration
+                                    )
+                                    .unwrap_or(0.12);
+
                             crate::enemies::update_enemy(
                                 enemy,
                                 1.0 / 60.0,
@@ -1026,6 +1037,7 @@ impl App {
                                 run_frame_duration,
                                 shot_frame_duration,
                                 dying_frame_duration,
+                                exploding_frame_duration,
                             );
                         }
 

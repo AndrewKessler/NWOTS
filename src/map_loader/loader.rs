@@ -2,7 +2,10 @@ use std::fs;
 
 use glam::Vec2;
 
-use crate::sprites::SpriteInstance;
+use crate::sprites::{
+    SpriteInstance,
+    SpriteRegistry,
+};
 use crate::enemies::EnemyInstance;
 use crate::world::ExitTrigger;
 use crate::world::{
@@ -14,6 +17,7 @@ use crate::world::{
 
 pub fn load_map(
     path: &str,
+    sprite_registry: &SpriteRegistry,
 ) -> Map {
 
     let content =
@@ -257,7 +261,15 @@ pub fn load_map(
                         angle,
 
                         health:
-                            100.0,
+                            match sprite_registry
+                                .get(parts[1])
+                            {
+                                Some(definition) =>
+                                    definition.health,
+
+                                None =>
+                                    100.0,
+                            },
 
                         animation:
                             "idle"

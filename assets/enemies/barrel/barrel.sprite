@@ -45,7 +45,7 @@ image = barrel_idle_LF.png
 
 
 animation exploding
-frame_duration = 0.12
+frame_duration = 0.05
 ground_offset = -16
 
 frame F

@@ -18,6 +18,7 @@ pub fn update_enemy(
     run_frame_duration: f32,
     shot_frame_duration: f32,
     dying_frame_duration: f32,
+    exploding_frame_duration: f32,
 ) {
 
     if enemy.animation == "exploding" {
@@ -26,7 +27,7 @@ pub fn update_enemy(
             delta_time;
 
         while enemy.animation_timer
-            >= 0.12
+            >= exploding_frame_duration
         {
 
             enemy.animation_timer -=
