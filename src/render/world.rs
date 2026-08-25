@@ -328,9 +328,12 @@ pub fn render_world(
                 .unwrap();
 
         let color =
-            ceiling_texture.sample(
-                tex_x,
-                tex_y,
+            apply_light(
+                ceiling_texture.sample(
+                    tex_x,
+                    tex_y,
+                ),
+                active_sector.light_level,
             );
 
         frame[idx] =
@@ -371,9 +374,12 @@ pub fn render_world(
                             as usize;
 
                     let color =
-                        wall_texture.sample(
-                            texture_x,
-                            texture_y,
+                        apply_light(
+                            wall_texture.sample(
+                                texture_x,
+                                texture_y,
+                            ),
+                            sector.light_level,
                         );
 
                     // Alpha-mask support.
@@ -477,9 +483,12 @@ pub fn render_world(
                     .unwrap();
 
             let color =
-                floor_texture.sample(
-                    tex_x,
-                    tex_y,
+                apply_light(
+                    floor_texture.sample(
+                        tex_x,
+                        tex_y,
+                    ),
+                    active_sector.light_level,
                 );
 
             let idx =
@@ -495,4 +504,21 @@ pub fn render_world(
     }
 
     zbuffer
+}
+
+fn apply_light(
+    color: [u8; 4],
+    light_level: u8,
+) -> [u8; 4] {
+
+    let factor =
+        light_level as f32
+            / 255.0;
+
+    [
+        (color[0] as f32 * factor) as u8,
+        (color[1] as f32 * factor) as u8,
+        (color[2] as f32 * factor) as u8,
+        color[3],
+    ]
 }

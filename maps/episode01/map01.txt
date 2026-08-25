@@ -2,6 +2,7 @@ sector sector_0
 
 floor metalfloor
 ceiling metalroof
+light 220
 
 wall 64 64 704 64 wall7 solid
 wall 64 64 64 192 wall7 solid
@@ -10,18 +11,52 @@ wall 64 256 64 384 wall7 solid
 wall 64 384 640 384 wall7 solid
 wall 640 384 640 896 wall7 solid
 wall 704 64 768 64 wall6 solid
-wall 768 64 1408 64 wall7 solid
-wall 1408 64 1408 192 wall7 solid
-wall 896 384 1408 384 wall7 solid
-wall 1408 256 1408 384 wall7 solid
+wall 768 64 960 64 wall7 solid
+portal 960 64 960 384 sector_1
+wall 896 384 960 384 wall7 solid
 wall 896 384 896 896 wall7 solid
-portal 640 896 896 896 sector_1
-wall 1408 192 1408 256 wall6 solid
+portal 640 896 896 896 sector_4
 
 sector sector_1
 
 floor metalfloor
 ceiling metalroof
+light 150
+
+wall 960 64 1216 64 wall7 solid
+portal 960 64 960 384 sector_0
+portal 1216 64 1216 384 sector_2
+wall 960 384 1216 384 wall7 solid
+
+sector sector_2
+
+floor metalfloor
+ceiling metalroof
+light 110
+
+wall 1216 64 1600 64 wall7 solid
+portal 1216 64 1216 384 sector_1
+wall 1216 384 1600 384 wall7 solid
+portal 1600 64 1600 384 sector_3
+
+sector sector_3
+
+floor metalfloor
+ceiling metalroof
+light 80
+
+wall 1600 64 1856 64 wall7 solid
+wall 1856 64 1856 192 wall7 solid
+portal 1600 64 1600 384 sector_2
+wall 1600 384 1856 384 wall7 solid
+wall 1856 256 1856 384 wall7 solid
+wall 1856 192 1856 256 wall6 solid
+
+sector sector_4
+
+floor textureD
+ceiling textureU
+light 150
 
 portal 640 896 896 896 sector_0
 wall 64 960 640 896 wall8 solid
@@ -31,23 +66,27 @@ wall 576 1280 640 1280 wall5 solid
 wall 512 1280 576 1280 wall5 solid
 wall 448 1280 512 1280 wall5 solid
 wall 384 1280 448 1280 wall5 solid
-wall 64 960 64 1280 brickwall solid
+wall 64 960 64 1088 brickwall solid
 wall 320 1280 384 1280 wall5 solid
 wall 256 1280 320 1280 wall5 solid
+wall 64 1088 64 1152 exit solid
 wall 192 1280 256 1280 wall5 solid
+wall 64 1152 64 1280 brickwall solid
 wall 128 1280 192 1280 wall5 solid
 wall 64 1280 128 1280 wall5 solid
 wall 1856 960 1856 1088 brickwall solid
 wall 1856 1088 1856 1152 exit solid
+wall 1856 1152 1856 1280 brickwall solid
 
 enemy crawler 1200 1250 0
+enemy crawler 1500 350 0
 
-enemy barrel 1200 124 0
-enemy barrel 1200 104 0
-enemy barrel 1200 84 0
-enemy barrel 1170 84 0
-enemy barrel 1170 104 0
-enemy barrel 1140 84 0
+enemy barrel 200 124 0
+enemy barrel 200 104 0
+enemy barrel 200 84 0
+enemy barrel 170 84 0
+enemy barrel 170 104 0
+enemy barrel 140 84 0
 
 
 exit 1800 1120 64 maps/episode01/map02.txt Press_E_To_Exit
@@ -58,6 +97,7 @@ spawn 672 224 0
 
 skybox assets/skies/dusk/
 
-item colt 700 224 0
+item colt 750 200 0
 
-item uparrow 700 224 0
+item uparrow 750 200 0
+

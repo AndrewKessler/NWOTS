@@ -15,6 +15,8 @@ use crate::world::{
     Player,
 };
 
+use crate::util::geometry::point_in_sector;
+
 enum RenderSprite<'a> {
     Item {
         position: Vec2,
@@ -202,6 +204,18 @@ pub fn render_sprites(
                         None => continue,
                     };
 
+                let light_level =
+                    map.sectors
+                        .iter()
+                        .find(|sector| {
+                            point_in_sector(
+                                position,
+                                sector,
+                            )
+                        })
+                        .map(|sector| sector.light_level)
+                        .unwrap_or(255);
+
                 render_sprite(
                     frame,
                     player,
@@ -213,6 +227,7 @@ pub fn render_sprites(
                     definition.scale_y,
                     sprite_frame.offset_x,
                     sprite_frame.offset_y,
+                    light_level,
                     zbuffer,
                 );
             }
@@ -312,6 +327,18 @@ pub fn render_sprites(
                         None => continue,
                     };
 
+                let light_level =
+                    map.sectors
+                        .iter()
+                        .find(|sector| {
+                            point_in_sector(
+                                position,
+                                sector,
+                            )
+                        })
+                        .map(|sector| sector.light_level)
+                        .unwrap_or(255);
+
                 render_sprite(
                     frame,
                     player,
@@ -323,6 +350,7 @@ pub fn render_sprites(
                     definition.scale_y,
                     sprite_frame.offset_x,
                     sprite_frame.offset_y,
+                    light_level,
                     zbuffer,
                 );
             }
@@ -341,6 +369,7 @@ fn render_sprite(
     scale_y: f32,
     offset_x: i32,
     offset_y: i32,
+    light_level: u8,
     zbuffer: &[f32],
 ) {
 
@@ -482,6 +511,24 @@ fn render_sprite(
                     tex_y,
                 );
 
+            let brightness =
+                light_level as f32 / 255.0;
+
+            let red =
+                (color[0] as f32
+                    * brightness)
+                    as u8;
+
+            let green =
+                (color[1] as f32
+                    * brightness)
+                    as u8;
+
+            let blue =
+                (color[2] as f32
+                    * brightness)
+                    as u8;
+
             if color[3] == 0 {
                 continue;
             }
@@ -493,13 +540,13 @@ fn render_sprite(
                     * 4;
 
             frame[idx] =
-                color[0];
+                red;
 
             frame[idx + 1] =
-                color[1];
+                green;
 
             frame[idx + 2] =
-                color[2];
+                blue;
 
             frame[idx + 3] =
                 255;

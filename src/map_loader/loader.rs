@@ -86,6 +86,9 @@ pub fn load_map(
                             ceiling_texture:
                                 "textureU".to_string(),
 
+                            light_level:
+                                255,
+
                             walls:
                                 Vec::new(),
                         }
@@ -109,6 +112,19 @@ pub fn load_map(
                 {
                     sec.ceiling_texture =
                         parts[1].to_string();
+                }
+            }
+
+            "light" => {
+
+                if let Some(sec)
+                    = current_sector.as_mut()
+                {
+
+                    sec.light_level =
+                        parts[1]
+                            .parse()
+                            .unwrap_or(255);
                 }
             }
 
