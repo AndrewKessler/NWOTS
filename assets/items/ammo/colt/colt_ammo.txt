@@ -1,0 +1,49 @@
+name = Colt Ammo
+
+radius = 12
+height = 12
+
+ground_offset = 0
+
+scale_x = 2.0
+scale_y = 2.0
+
+frame F
+image = idle_F.png
+offset_x = 0
+offset_y = 0
+
+frame RF
+image = idle_RF.png
+offset_x = 0
+offset_y = 0
+
+frame R
+image = idle_R.png
+offset_x = 0
+offset_y = 0
+
+frame RB
+image = idle_RB.png
+offset_x = 0
+offset_y = 0
+
+frame B
+image = idle_B.png
+offset_x = 0
+offset_y = 0
+
+frame LB
+image = idle_LB.png
+offset_x = 0
+offset_y = 0
+
+frame L
+image = idle_L.png
+offset_x = 0
+offset_y = 0
+
+frame LF
+image = idle_LF.png
+offset_x = 0
+offset_y = 0

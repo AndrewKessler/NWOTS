@@ -148,7 +148,7 @@ frame F
 image = crawler_shot_F1.png
 
 animation dying
-frame_duration = 0.15
+frame_duration = 0.12
 ground_offset = -16
 
 frame F

@@ -3,13 +3,15 @@ use crate::world::{
     Player,
 };
 
-use crate::weapons::
-    WeaponRegistry;
+use crate::weapons::WeaponRegistry;
+
+use crate::audio::AudioManager;
 
 pub fn pickup_items(
     player: &mut Player,
     map: &mut Map,
     weapons: &WeaponRegistry,
+    audio: &mut AudioManager,
 ) {
 
     map.items.retain(
@@ -65,6 +67,30 @@ pub fn pickup_items(
                                     .pickup_ammo
                                     as i32;
                     }
+
+                    false
+
+                } else {
+
+                    true
+                }
+
+            } else if item.sprite_id
+                == "ammo_colt"
+            {
+
+                if distance < 16.0 {
+
+                    player.stats.ammo +=
+                        30;
+
+                    println!(
+                        "Picked up Colt Ammo: +30"
+                    );
+
+                    audio.play_sound(
+                        "assets/items/ammo/colt/pickup.mp3"
+                    );
 
                     false
 

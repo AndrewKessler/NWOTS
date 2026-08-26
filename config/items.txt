@@ -11,3 +11,7 @@ uparrow = assets/items/decorations/uparrow/uparrow.txt
 crawler = assets/enemies/crawler/crawler.sprite
 
 barrel = assets/enemies/barrel/barrel.sprite
+
+# Ammunition
+
+ammo_colt = assets/items/ammo/colt/colt_ammo.txt

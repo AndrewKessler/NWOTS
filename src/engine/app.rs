@@ -1045,6 +1045,7 @@ impl App {
                             &mut player,
                             &mut map,
                             &weapon_registry,
+                            &mut audio,
                         );
 
                         for exit in
