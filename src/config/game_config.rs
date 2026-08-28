@@ -50,12 +50,14 @@ pub struct EpisodeConfig {
     pub maps: Vec<MapConfig>,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct MapConfig {
-
-    pub title: String,
-
-    pub file: String,
-
+#[derive(Debug, Deserialize)] 
+pub struct MapConfig { 
+ 
+    pub title: String, 
+ 
+    pub file: String, 
+ 
     pub music: String,
+
+    pub enter: String,
 }

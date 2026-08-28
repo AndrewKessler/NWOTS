@@ -2,9 +2,9 @@
 
 path = "assets/cutscenes/intro"
 
-fps = 24
+fps = 30
 
-music = ""
+music = "assets/cutscenes/intro.mp3"
 
 skippable = true
 
@@ -26,13 +26,16 @@ title = "FANUM NINE"
 title = "Arrival"
 file = "maps/episode01/map01.txt"
 music = "assets/music/map01.mp3"
+enter = ""
 
 [[episode.maps]]
 title = "Reactor"
 file = "maps/episode01/map02.txt"
 music = "assets/music/map02.mp3"
+enter = ""
 
 [[episode.maps]]
 title = "Escape"
 file = "maps/episode01/map03.txt"
 music = "assets/music/map03.mp3"
+enter = ""

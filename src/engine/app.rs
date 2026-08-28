@@ -74,13 +74,18 @@ fn set_game_state(
                 &config.cutscene
             {
 
+                println!(
+                    "CUTSCENE AUDIO PATH: '{}'",
+                    cutscene.music
+                );
+
                 if !cutscene
                     .music
                     .trim()
                     .is_empty()
                 {
 
-                    audio.play_music(
+                    audio.play_cutscene(
                         &cutscene.music
                     );
 
@@ -132,6 +137,20 @@ fn find_map_title(
     }
 
     "Unknown Map".to_string()
+}
+
+fn play_map_enter_audio(
+    audio: &AudioManager,
+    enter: &str,
+) {
+
+    if enter.trim().is_empty() {
+        return;
+    }
+
+    audio.play_sound(
+        enter
+    );
 }
 
 pub struct App;
@@ -288,6 +307,14 @@ impl App {
                 &sprite_registry,
             );
 
+        play_map_enter_audio(
+            &audio,
+            &config
+                .episode[0]
+                .maps[0]
+                .enter,
+        );
+
         let mut skybox =
 
             if let Some(path)
@@ -341,6 +368,27 @@ impl App {
 
             GameState::Menu
         };
+
+        if game_state == GameState::Cutscene {
+
+            if let Some(
+                cutscene
+            ) =
+                &config.cutscene
+            {
+
+                if !cutscene
+                    .music
+                    .trim()
+                    .is_empty()
+                {
+
+                    audio.play_cutscene(
+                        &cutscene.music
+                    );
+                }
+            }
+        }
 
         if game_state
             ==
@@ -795,6 +843,8 @@ impl App {
                                         KeyCode::Space
                                     {
 
+                                        audio.stop_cutscene();
+
                                         set_game_state(
                                             &mut game_state,
                                             GameState::Menu,
@@ -929,6 +979,31 @@ impl App {
                                         &transition.next_map,
                                         &sprite_registry,
                                     );
+
+                                let enter_audio =
+                                    config
+                                        .episode
+                                        .iter()
+                                        .flat_map(
+                                            |episode|
+                                                episode.maps.iter()
+                                        )
+                                        .find(
+                                            |map_config|
+                                                map_config.file
+                                                    ==
+                                                transition.next_map
+                                        )
+                                        .map(
+                                            |map_config|
+                                                map_config.enter.clone()
+                                        )
+                                        .unwrap_or_default();
+
+                                play_map_enter_audio(
+                                    &audio,
+                                    &enter_audio,
+                                );
 
                                 skybox =
 
@@ -1219,6 +1294,8 @@ impl App {
 
                                     if cutscene.finished()
                                     {
+
+                                        audio.stop_cutscene();
 
                                         set_game_state(
                                             &mut game_state,
