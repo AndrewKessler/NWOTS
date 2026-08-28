@@ -2,7 +2,7 @@
 
 path = "assets/cutscenes/intro"
 
-fps = 30
+fps = 29
 
 music = "assets/cutscenes/intro.mp3"
 
@@ -26,7 +26,7 @@ title = "FANUM NINE"
 title = "Arrival"
 file = "maps/episode01/map01.txt"
 music = "assets/music/map01.mp3"
-enter = ""
+enter = "assets/music/story/intro_1.mp3"
 
 [[episode.maps]]
 title = "Reactor"

@@ -307,14 +307,6 @@ impl App {
                 &sprite_registry,
             );
 
-        play_map_enter_audio(
-            &audio,
-            &config
-                .episode[0]
-                .maps[0]
-                .enter,
-        );
-
         let mut skybox =
 
             if let Some(path)
@@ -900,6 +892,14 @@ impl App {
                                                         GameState::Playing,
                                                         &mut audio,
                                                         &config,
+                                                    );
+
+                                                    play_map_enter_audio(
+                                                        &audio,
+                                                        &config
+                                                            .episode[0]
+                                                            .maps[0]
+                                                            .enter,
                                                     );
                                                 }
 
