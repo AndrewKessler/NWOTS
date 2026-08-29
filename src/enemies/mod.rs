@@ -8,6 +8,11 @@ use crate::world::Sector;
 use crate::util::raycast_wall;
 use crate::world::WallType;
 
+
+// ============================================================================
+// ENEMY UPDATE
+// ============================================================================
+
 pub fn update_enemy(
     enemy: &mut EnemyInstance,
     delta_time: f32,
@@ -15,11 +20,18 @@ pub fn update_enemy(
     sectors: &[Sector],
     radius: f32,
     speed: f32,
+    attack_radius: f32,
+    damage: i32,
     run_frame_duration: f32,
     shot_frame_duration: f32,
+    attack_frame_duration: f32,
     dying_frame_duration: f32,
     exploding_frame_duration: f32,
-) {
+) -> Option<i32> {
+
+    // ========================================================================
+    // EXPLODING
+    // ========================================================================
 
     if enemy.animation == "exploding" {
 
@@ -51,8 +63,13 @@ pub fn update_enemy(
             }
         }
 
-        return;
+        return None;
     }
+
+
+    // ========================================================================
+    // DYING
+    // ========================================================================
 
     if enemy.animation == "dying" {
 
@@ -84,13 +101,83 @@ pub fn update_enemy(
             }
         }
 
-        return;
+        return None;
     }
+
+
+    // ========================================================================
+    // CORPSE
+    // ========================================================================
 
     if enemy.animation == "corpse" {
 
-        return;
+        return None;
     }
+
+
+    // ========================================================================
+    // DESTROYED
+    // ========================================================================
+
+    if enemy.animation == "destroyed" {
+
+        return None;
+    }
+
+
+    // ========================================================================
+    // ATTACK
+    // ========================================================================
+
+    if enemy.animation == "attack1" {
+
+        enemy.animation_timer +=
+            delta_time;
+
+        while enemy.animation_timer
+            >= attack_frame_duration
+        {
+
+            enemy.animation_timer -=
+                attack_frame_duration;
+
+            enemy.animation_frame +=
+                1;
+
+            // Seven frames:
+            //
+            // F0
+            // F1
+            // F2
+            // F3
+            // F4
+            // F5
+            // F6
+            //
+            // Attack lands when F6 has completed.
+
+            if enemy.animation_frame >= 7 {
+
+                enemy.animation =
+                    "run".to_string();
+
+                enemy.animation_frame =
+                    0;
+
+                enemy.animation_timer =
+                    0.0;
+
+                return Some(damage);
+            }
+        }
+
+        return None;
+    }
+
+
+    // ========================================================================
+    // NO MOVEMENT
+    // ========================================================================
 
     if speed <= 0.0 {
 
@@ -103,22 +190,55 @@ pub fn update_enemy(
         enemy.animation_timer =
             0.0;
 
-        return;
+        return None;
     }
 
+
+    // ========================================================================
+    // PLAYER DISTANCE
+    // ========================================================================
+
     let to_player =
-        player_position - enemy.position;
+        player_position
+            - enemy.position;
 
     let distance =
         to_player.length();
 
-    if distance > radius {
+
+    // ========================================================================
+    // ATTACK RANGE
+    // ========================================================================
+
+    if distance <= attack_radius {
 
         enemy.angle =
             to_player.y.atan2(
                 to_player.x
             );
+
+        enemy.animation =
+            "attack1".to_string();
+
+        enemy.animation_frame =
+            0;
+
+        enemy.animation_timer =
+            0.0;
+
+        return None;
     }
+
+
+    // ========================================================================
+    // FACE PLAYER
+    // ========================================================================
+
+    enemy.angle =
+        to_player.y.atan2(
+            to_player.x
+        );
+
 
     let direction =
         Vec2::new(
@@ -126,41 +246,51 @@ pub fn update_enemy(
             enemy.angle.sin(),
         );
 
+
+    // ========================================================================
+    // SHOT
+    // ========================================================================
+
     if enemy.animation == "shot" {
 
-    let frame_duration =
-        shot_frame_duration;
+        let frame_duration =
+            shot_frame_duration;
 
-    enemy.animation_timer +=
-        delta_time;
+        enemy.animation_timer +=
+            delta_time;
 
-    while enemy.animation_timer
-        >= frame_duration
-    {
+        while enemy.animation_timer
+            >= frame_duration
+        {
 
-        enemy.animation_timer -=
-            frame_duration;
+            enemy.animation_timer -=
+                frame_duration;
 
-        enemy.animation_frame +=
-            1;
+            enemy.animation_frame +=
+                1;
 
-        if enemy.animation_frame >= 2 {
+            if enemy.animation_frame >= 2 {
 
-            enemy.animation =
-                "run".to_string();
+                enemy.animation =
+                    "run".to_string();
 
-            enemy.animation_frame =
-                0;
+                enemy.animation_frame =
+                    0;
 
-            enemy.animation_timer =
-                0.0;
+                enemy.animation_timer =
+                    0.0;
 
-            break;
+                break;
+            }
         }
+
+        return None;
     }
 
-    return;
-}
+
+    // ========================================================================
+    // MOVEMENT
+    // ========================================================================
 
     let movement =
         direction
@@ -170,6 +300,7 @@ pub fn update_enemy(
     let new_position =
         enemy.position
             + movement;
+
 
     if can_move_to(
         enemy.position,
@@ -181,6 +312,11 @@ pub fn update_enemy(
         enemy.position =
             new_position;
     }
+
+
+    // ========================================================================
+    // RUN ANIMATION
+    // ========================================================================
 
     enemy.animation =
         "run".to_string();
@@ -199,7 +335,14 @@ pub fn update_enemy(
             (enemy.animation_frame + 1)
                 % 4;
     }
+
+    None
 }
+
+
+// ============================================================================
+// DAMAGE ENEMY
+// ============================================================================
 
 pub fn damage_enemy(
     enemy: &mut EnemyInstance,
@@ -250,6 +393,11 @@ pub fn damage_enemy(
     false
 }
 
+
+// ============================================================================
+// HITSCAN ENEMY
+// ============================================================================
+
 pub fn hitscan_enemy(
     origin: Vec2,
     direction: Vec2,
@@ -280,6 +428,11 @@ pub fn hitscan_enemy(
 
     Some(projection)
 }
+
+
+// ============================================================================
+// ENEMY MOVEMENT COLLISION
+// ============================================================================
 
 fn can_move_to(
     current: Vec2,
@@ -312,7 +465,9 @@ fn can_move_to(
                 continue;
             }
 
-            if let Some((wall_distance, _)) =
+            if let Some(
+                (wall_distance, _)
+            ) =
                 raycast_wall(
                     current,
                     direction,
@@ -321,7 +476,8 @@ fn can_move_to(
             {
 
                 if wall_distance
-                    <= distance + radius
+                    <=
+                    distance + radius
                 {
                     return false;
                 }

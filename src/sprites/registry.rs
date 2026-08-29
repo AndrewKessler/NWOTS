@@ -137,6 +137,12 @@ impl SpriteRegistry {
         let mut speed =
             100.0;
 
+        let mut attack_radius =
+            0.0;
+
+        let mut damage =
+            0;
+
         let mut actor_type =
             String::from("enemy");
 
@@ -298,6 +304,30 @@ impl SpriteRegistry {
             else if line.starts_with("speed") {
 
                 speed =
+                    line
+                        .split('=')
+                        .nth(1)
+                        .unwrap()
+                        .trim()
+                        .parse()
+                        .unwrap();
+            }
+
+            else if line.starts_with("attack_radius") {
+
+                attack_radius =
+                    line
+                        .split('=')
+                        .nth(1)
+                        .unwrap()
+                        .trim()
+                        .parse()
+                        .unwrap();
+            }
+
+            else if line.starts_with("damage") {
+
+                damage =
                     line
                         .split('=')
                         .nth(1)
@@ -624,6 +654,10 @@ impl SpriteRegistry {
                 health,
 
                 speed,
+
+                attack_radius,
+
+                damage,
 
                 actor_type,
 

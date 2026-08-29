@@ -1066,6 +1066,12 @@ impl App {
                             let speed =
                                 definition.speed;
 
+                            let attack_radius =
+                                definition.attack_radius;
+
+                            let damage =
+                                definition.damage;
+
                             let run_frame_duration =
                                 definition
                                     .animations
@@ -1074,6 +1080,15 @@ impl App {
                                         animation.frame_duration
                                     )
                                     .unwrap_or(0.20);
+
+                            let attack_frame_duration =
+                                definition
+                                    .animations
+                                    .get("attack1")
+                                    .map(|animation|
+                                        animation.frame_duration
+                                    )
+                                    .unwrap_or(0.10);
 
                             let shot_frame_duration =
                                 definition
@@ -1102,6 +1117,7 @@ impl App {
                                     )
                                     .unwrap_or(0.12);
 
+                        let attack_damage =
                             crate::enemies::update_enemy(
                                 enemy,
                                 1.0 / 60.0,
@@ -1109,11 +1125,46 @@ impl App {
                                 &map.sectors,
                                 radius,
                                 speed,
+                                attack_radius,
+                                damage,
                                 run_frame_duration,
                                 shot_frame_duration,
+                                attack_frame_duration,
                                 dying_frame_duration,
                                 exploding_frame_duration,
                             );
+
+                        if let Some(
+                            damage
+                        ) =
+                            attack_damage
+                        {
+
+                            player.stats.health -=
+                                damage;
+
+                            println!(
+                                "Crawler attacked! Player health = {}",
+                                player.stats.health
+                            );
+
+                            if player.stats.health <= 0 {
+
+                                player.stats.health =
+                                    0;
+
+                                println!(
+                                    "Player died."
+                                );
+
+                                game_state =
+                                    GameState::Menu;
+
+                                audio.stop_music();
+
+                                break;
+                            }
+                        }
                         }
 
                         pickup_items(

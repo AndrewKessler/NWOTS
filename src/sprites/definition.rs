@@ -36,6 +36,10 @@ pub struct SpriteDefinition {
 
     pub speed: f32,
 
+    pub attack_radius: f32,
+
+    pub damage: i32,
+
     pub actor_type: String,
 
     pub explosion_damage: f32,

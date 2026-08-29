@@ -8,6 +8,8 @@ scale_y = 0.75
 
 health = 100
 speed = 100.0
+attack_radius = 60
+damage = 20
 
 animation idle
 frame_duration = 0.50
@@ -146,6 +148,31 @@ image = crawler_shot_F0.png
 
 frame F
 image = crawler_shot_F1.png
+
+animation attack1
+frame_duration = 0.10
+ground_offset = -16
+
+frame F
+image = crawler_attack1_F0.png
+
+frame F
+image = crawler_attack1_F1.png
+
+frame F
+image = crawler_attack1_F2.png
+
+frame F
+image = crawler_attack1_F3.png
+
+frame F
+image = crawler_attack1_F4.png
+
+frame F
+image = crawler_attack1_F5.png
+
+frame F
+image = crawler_attack1_F6.png
 
 animation dying
 frame_duration = 0.12
