@@ -108,6 +108,20 @@ pub fn render_hud(
         );
 
     }
+
+    draw_text(
+                frame,
+                font,
+                &player
+                    .stats
+                    .health
+                    .to_string(),
+                140,
+                18,
+                24.0,
+                [255,255,255],
+            );
+
 }
 
 fn draw_icon(
