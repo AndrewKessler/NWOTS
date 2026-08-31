@@ -113,6 +113,8 @@ fn set_game_state(
             );
         }
 
+        GameState::GameOver => {}
+
         GameState::Exit => {}
     }
 
@@ -382,6 +384,8 @@ impl App {
             }
         }
 
+        
+
         if game_state
             ==
             GameState::Menu
@@ -397,6 +401,9 @@ impl App {
         
         let mut right_mouse =
             false;
+
+        let mut death_timer =
+            0.0f32;
 
         let mut use_pressed =
             false;
@@ -786,6 +793,7 @@ impl App {
                                 }
                             }
                         }
+
                     }
                 }
 
@@ -815,6 +823,113 @@ impl App {
                                 keys.insert(
                                     keycode
                                 );
+
+                                if game_state
+                                    ==
+                                    GameState::GameOver
+                                {
+
+                                    if keycode
+                                        ==
+                                        KeyCode::Space
+                                    {
+
+                                        println!(
+                                            "Restarting game..."
+                                        );
+
+                                        // ================================================================
+                                        // STOP AUDIO
+                                        // ================================================================
+
+                                        audio.stop_music();
+
+
+                                        // ================================================================
+                                        // RELOAD MAP 01
+                                        // ================================================================
+
+                                        map =
+                                            load_map(
+                                                &config
+                                                    .episode[0]
+                                                    .maps[0]
+                                                    .file,
+                                                &sprite_registry,
+                                            );
+
+
+                                        // ================================================================
+                                        // RELOAD SKYBOX
+                                        // ================================================================
+
+                                        skybox =
+
+                                            if let Some(path)
+                                                =
+                                                &map.skybox_path
+                                            {
+
+                                                Some(
+                                                    crate::render::
+                                                        Skybox::load(
+                                                            path
+                                                        )
+                                                )
+
+                                            } else {
+
+                                                None
+                                            };
+
+
+                                        // ================================================================
+                                        // RESET PLAYER
+                                        // ================================================================
+
+                                        player =
+                                            Player::new(
+                                                map.spawn,
+                                                map.spawn_angle,
+                                            );
+
+
+                                        // ================================================================
+                                        // RESET TRANSITION
+                                        // ================================================================
+
+                                        transition =
+                                            LevelTransition::new();
+
+
+                                        // ================================================================
+                                        // RESET DEATH TIMER
+                                        // ================================================================
+
+                                        death_timer =
+                                            0.0;
+
+
+                                        // ================================================================
+                                        // RESET MENU SELECTION
+                                        // ================================================================
+
+                                        menu_index =
+                                            0;
+
+
+                                        // ================================================================
+                                        // RETURN TO MENU
+                                        // ================================================================
+
+                                        set_game_state(
+                                            &mut game_state,
+                                            GameState::Menu,
+                                            &mut audio,
+                                            &config,
+                                        );
+                                    }
+                                }
 
                                 if keycode
                                     ==
@@ -1134,37 +1249,44 @@ impl App {
                                 exploding_frame_duration,
                             );
 
-                        if let Some(
-                            damage
-                        ) =
-                            attack_damage
-                        {
+                            if let Some(
+                                damage
+                            ) =
+                                attack_damage
+                            {
 
-                            player.stats.health -=
-                                damage;
-
-                            println!(
-                                "Crawler attacked! Player health = {}",
-                                player.stats.health
-                            );
-
-                            if player.stats.health <= 0 {
-
-                                player.stats.health =
-                                    0;
+                                player.stats.health -=
+                                    damage;
 
                                 println!(
-                                    "Player died."
+                                    "Crawler attacked! Player health = {}",
+                                    player.stats.health
                                 );
 
-                                game_state =
-                                    GameState::Menu;
+                                if player.stats.health <= 0 {
 
-                                audio.stop_music();
+                                    player.stats.health =
+                                        0;
 
-                                break;
+                                    println!(
+                                        "Player died."
+                                    );
+
+                                    death_timer =
+                                        0.0;
+
+                                    audio.stop_music();
+
+                                    audio.play_sound(
+                                        "assets/music/player/death.mp3"
+                                    );
+
+                                    game_state =
+                                        GameState::GameOver;
+
+                                    break;
+                                }
                             }
-                        }
                         }
 
                         pickup_items(
@@ -1309,8 +1431,26 @@ impl App {
                                 }
                             }
                         }
+                                        }
+
+                    if game_state
+                        ==
+                        GameState::GameOver
+                    {
+
+                        death_timer +=
+                            1.0 / 60.0;
+
+                        player.pitch +=
+                            1.5;
+
+                        if player.pitch > 80.0 {
+
+                            player.pitch =
+                                80.0;
+                        }
                     }
-                    
+
                     use_pressed =
                         false;
 
@@ -1532,6 +1672,86 @@ impl App {
                                     &menu_font,
                                 );
                             }
+                        }
+
+                       GameState::GameOver => {
+
+                            let zbuffer =
+                                render_world(
+                                    frame,
+                                    &player,
+                                    &map,
+                                    &textures.textures,
+                                    skybox.as_ref(),
+                                );
+
+                            render_sprites(
+                                frame,
+                                &player,
+                                &map,
+                                &sprite_registry,
+                                &zbuffer,
+                            );
+
+                            if player
+                                .inventory
+                                .equipped_weapon
+                                .is_some()
+                            {
+
+                                let current_viewmodel =
+                                    match player.weapon_state {
+
+                                        crate::weapons::
+                                            WeaponState::Idle => {
+                                            &colt_idle
+                                        }
+
+                                        crate::weapons::
+                                            WeaponState::Firing
+                                        |
+                                        crate::weapons::
+                                            WeaponState::Cooldown => {
+
+                                            match player.weapon_frame {
+
+                                                0 => &colt_fire_0,
+
+                                                1 => &colt_fire_1,
+
+                                                2 => &colt_fire_2,
+
+                                                _ => &colt_fire_3,
+                                            }
+                                        }
+                                    };
+
+                                render_viewmodel(
+                                    frame,
+                                    current_viewmodel,
+                                    235,
+                                    290,
+                                    0.7,
+                                );
+                            }
+
+                            render_hud(
+                                frame,
+                                &hud_texture,
+                                &colt_icon,
+                                &player,
+                                &menu_font,
+                            );
+
+                            draw_text(
+                                frame,
+                                &menu_font,
+                                "GAME OVER",
+                                220,
+                                210,
+                                32.0,
+                                [255, 255, 255],
+                            );
                         }
 
                         GameState::Exit => {

@@ -13,5 +13,7 @@ pub enum GameState {
 
     Playing,
 
+    GameOver,
+
     Exit,
 }
