@@ -15,12 +15,11 @@ use crate::world::{
     Player,
 };
 
-use crate::util::geometry::point_in_sector;
-
 enum RenderSprite<'a> {
     Item {
         position: Vec2,
         sprite_id: &'a str,
+        rotation: f32,
     },
 
     Enemy {
@@ -39,7 +38,6 @@ pub fn render_sprites(
     registry: &SpriteRegistry,
     zbuffer: &[f32],
 ) {
-
     let mut sprites:
         Vec<(
             f32,
@@ -50,7 +48,6 @@ pub fn render_sprites(
     // ITEMS
 
     for item in &map.items {
-
         let dx =
             item.position.x
                 - player.position.x;
@@ -73,6 +70,9 @@ pub fn render_sprites(
 
                     sprite_id:
                         &item.sprite_id,
+
+                    rotation:
+                        item.rotation,
                 },
             )
         );
@@ -81,7 +81,6 @@ pub fn render_sprites(
     // ENEMIES
 
     for enemy in &map.enemies {
-
         let dx =
             enemy.position.x
                 - player.position.x;
@@ -137,12 +136,16 @@ pub fn render_sprites(
     for (_, sprite)
         in sprites
     {
-
         match sprite {
+
+            // =========================================================
+            // ITEM
+            // =========================================================
 
             RenderSprite::Item {
                 position,
                 sprite_id,
+                rotation,
             } => {
 
                 let definition =
@@ -150,9 +153,11 @@ pub fn render_sprites(
                         sprite_id
                     ) {
 
-                        Some(def) => def,
+                        Some(def) =>
+                            def,
 
-                        None => continue,
+                        None =>
+                            continue,
                     };
 
                 let dx =
@@ -163,12 +168,42 @@ pub fn render_sprites(
                     player.position.y
                         - position.y;
 
-                let angle =
+                //
+                // Direction from the item toward the player.
+                //
+                let angle_to_player =
                     dy.atan2(dx);
+
+                //
+                // Convert the world-relative viewing angle
+                // into the sprite's local orientation.
+                //
+                // This is the important part for rotating sprites.
+                //
+                let mut relative_angle =
+                    angle_to_player
+                        - rotation;
+
+                //
+                // Normalize to -PI ... +PI.
+                //
+                while relative_angle
+                    > std::f32::consts::PI
+                {
+                    relative_angle -=
+                        std::f32::consts::TAU;
+                }
+
+                while relative_angle
+                    < -std::f32::consts::PI
+                {
+                    relative_angle +=
+                        std::f32::consts::TAU;
+                }
 
                 let direction =
                     SpriteDirection::from_angle(
-                        angle
+                        relative_angle
                     );
 
                 let animation =
@@ -180,41 +215,34 @@ pub fn render_sprites(
                         Some(animation) =>
                             animation,
 
-                        None => continue,
+                        None =>
+                            continue,
                     };
 
                 let sprite_frames =
-                    match animation.frames.get(
-                        &direction
-                    ) {
+                    match animation
+                        .frames
+                        .get(&direction)
+                    {
 
                         Some(frames) =>
                             frames,
 
-                        None => continue,
+                        None =>
+                            continue,
                     };
 
                 let sprite_frame =
-                    match sprite_frames.first()
+                    match sprite_frames
+                        .first()
                     {
 
                         Some(frame) =>
                             frame,
 
-                        None => continue,
+                        None =>
+                            continue,
                     };
-
-                let light_level =
-                    map.sectors
-                        .iter()
-                        .find(|sector| {
-                            point_in_sector(
-                                position,
-                                sector,
-                            )
-                        })
-                        .map(|sector| sector.light_level)
-                        .unwrap_or(255);
 
                 render_sprite(
                     frame,
@@ -227,10 +255,13 @@ pub fn render_sprites(
                     definition.scale_y,
                     sprite_frame.offset_x,
                     sprite_frame.offset_y,
-                    light_level,
                     zbuffer,
                 );
             }
+
+            // =========================================================
+            // ENEMY
+            // =========================================================
 
             RenderSprite::Enemy {
                 position,
@@ -245,9 +276,11 @@ pub fn render_sprites(
                         enemy_id
                     ) {
 
-                        Some(def) => def,
+                        Some(def) =>
+                            def,
 
-                        None => continue,
+                        None =>
+                            continue,
                     };
 
                 let dx =
@@ -282,15 +315,14 @@ pub fn render_sprites(
                 let selected_animation =
                     match definition
                         .animations
-                        .get(
-                            animation
-                        )
+                        .get(animation)
                     {
 
                         Some(animation) =>
                             animation,
 
-                        None => continue,
+                        None =>
+                            continue,
                     };
 
                 let direction =
@@ -306,38 +338,29 @@ pub fn render_sprites(
                     };
 
                 let sprite_frames =
-                    match selected_animation.frames.get(
-                        &direction
-                    ) {
+                    match selected_animation
+                        .frames
+                        .get(&direction)
+                    {
 
                         Some(frames) =>
                             frames,
 
-                        None => continue,
+                        None =>
+                            continue,
                     };
 
                 let sprite_frame =
-                    match sprite_frames.get(
-                        animation_frame
-                    ) {
+                    match sprite_frames
+                        .get(animation_frame)
+                    {
 
                         Some(frame) =>
                             frame,
 
-                        None => continue,
+                        None =>
+                            continue,
                     };
-
-                let light_level =
-                    map.sectors
-                        .iter()
-                        .find(|sector| {
-                            point_in_sector(
-                                position,
-                                sector,
-                            )
-                        })
-                        .map(|sector| sector.light_level)
-                        .unwrap_or(255);
 
                 render_sprite(
                     frame,
@@ -350,13 +373,17 @@ pub fn render_sprites(
                     definition.scale_y,
                     sprite_frame.offset_x,
                     sprite_frame.offset_y,
-                    light_level,
                     zbuffer,
                 );
             }
         }
     }
 }
+
+
+// =============================================================
+// SPRITE PROJECTION / RENDERING
+// =============================================================
 
 fn render_sprite(
     frame: &mut [u8],
@@ -369,10 +396,8 @@ fn render_sprite(
     scale_y: f32,
     offset_x: i32,
     offset_y: i32,
-    light_level: u8,
     zbuffer: &[f32],
 ) {
-
     let dx =
         sprite_pos.x
             - player.position.x;
@@ -422,9 +447,9 @@ fn render_sprite(
             * WIDTH as f32;
 
     let base_sprite_height =
-    (HEIGHT as f32
-        * world_height)
-        / distance;
+        (HEIGHT as f32
+            * world_height)
+            / distance;
 
     let base_sprite_width =
         base_sprite_height
@@ -475,6 +500,7 @@ fn render_sprite(
             screen_col as usize;
 
         // Wall geometry always wins.
+
         if distance
             >= zbuffer[col]
         {
@@ -511,24 +537,6 @@ fn render_sprite(
                     tex_y,
                 );
 
-            let brightness =
-                light_level as f32 / 255.0;
-
-            let red =
-                (color[0] as f32
-                    * brightness)
-                    as u8;
-
-            let green =
-                (color[1] as f32
-                    * brightness)
-                    as u8;
-
-            let blue =
-                (color[2] as f32
-                    * brightness)
-                    as u8;
-
             if color[3] == 0 {
                 continue;
             }
@@ -540,13 +548,13 @@ fn render_sprite(
                     * 4;
 
             frame[idx] =
-                red;
+                color[0];
 
             frame[idx + 1] =
-                green;
+                color[1];
 
             frame[idx + 2] =
-                blue;
+                color[2];
 
             frame[idx + 3] =
                 255;
