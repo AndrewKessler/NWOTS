@@ -7,4 +7,6 @@ pub struct SpriteInstance {
     pub position: Vec2,
 
     pub rotation: f32,
+
+    pub spin: bool,
 }

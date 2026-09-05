@@ -1,3 +1,5 @@
+spin = 45
+
 [cutscene]
 
 path = "assets/cutscenes/intro"

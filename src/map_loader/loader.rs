@@ -206,40 +206,46 @@ pub fn load_map(
 
             "item" => {
 
-                        let rotation =
-                            if parts.len() >= 5 {
+                let rotation =
+                    if parts.len() >= 5 {
 
-                                parts[4]
+                        parts[4]
+                            .parse()
+                            .unwrap_or(0.0)
+
+                    } else {
+
+                        0.0
+                    };
+
+                let spin =
+                    parts.len() >= 6
+                        && parts[5] == "spin";
+
+                items.push(
+
+                    SpriteInstance {
+
+                        sprite_id:
+                            parts[1].to_string(),
+
+                        position:
+                            Vec2::new(
+                                parts[2]
                                     .parse()
-                                    .unwrap_or(0.0)
+                                    .unwrap(),
 
-                            } else {
+                                parts[3]
+                                    .parse()
+                                    .unwrap(),
+                            ),
 
-                                0.0
-                            };
+                        rotation,
 
-                        items.push(
-
-                            SpriteInstance {
-
-                                sprite_id:
-                                    parts[1].to_string(),
-
-                                position:
-                                    Vec2::new(
-                                        parts[2]
-                                            .parse()
-                                            .unwrap(),
-
-                                        parts[3]
-                                            .parse()
-                                            .unwrap(),
-                                    ),
-
-                                rotation,
-                            }
-                        );
+                        spin,
                     }
+                );
+            }
 
             "enemy" => {
 

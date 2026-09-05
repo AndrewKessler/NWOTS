@@ -3,6 +3,8 @@ use serde::Deserialize;
 #[derive(Debug, Deserialize)]
 pub struct GameConfig {
 
+    pub spin: f32,
+
     pub cutscene:
         Option<CutsceneConfig>,
 
@@ -37,8 +39,11 @@ pub struct MenuConfig {
     pub move_sound: String,
 
     pub start_message: String,
+
     pub save_message: String,
+
     pub load_message: String,
+
     pub exit_message: String,
 }
 
@@ -50,13 +55,13 @@ pub struct EpisodeConfig {
     pub maps: Vec<MapConfig>,
 }
 
-#[derive(Debug, Deserialize)] 
-pub struct MapConfig { 
- 
-    pub title: String, 
- 
-    pub file: String, 
- 
+#[derive(Debug, Deserialize)]
+pub struct MapConfig {
+
+    pub title: String,
+
+    pub file: String,
+
     pub music: String,
 
     pub enter: String,

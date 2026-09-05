@@ -405,6 +405,9 @@ impl App {
         let mut death_timer =
             0.0f32;
 
+        let mut item_spin_angle =
+            0.0f32;
+
         let mut use_pressed =
             false;
 
@@ -1082,6 +1085,17 @@ impl App {
                         GameState::Playing
                     {
 
+                        item_spin_angle +=
+                            config.spin.to_radians()
+                                * (8.0 / 60.0);
+
+                        while item_spin_angle
+                            >= std::f32::consts::TAU
+                        {
+                            item_spin_angle -=
+                                std::f32::consts::TAU;
+                        }
+
                         if transition.active {
 
                             transition.timer -=
@@ -1596,6 +1610,7 @@ impl App {
                                     &map,
                                     &sprite_registry,
                                     &zbuffer,
+                                    item_spin_angle,
                                 );
 
                                 for exit in &map.exits {
@@ -1691,6 +1706,7 @@ impl App {
                                 &map,
                                 &sprite_registry,
                                 &zbuffer,
+                                item_spin_angle,
                             );
 
                             if player

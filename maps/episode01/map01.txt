@@ -71,11 +71,11 @@ wall 1856 1152 1856 1280 brickwall solid
 
 enemy crawler 1200 1250 0
 
-enemy barrel 200 124 3.1415927
+enemy barrel 200 124 0
 enemy barrel 200 104 0
-enemy barrel 200 84 3.1415927
+enemy barrel 200 84 0
 enemy barrel 170 84 0
-enemy barrel 170 104 3.1415927
+enemy barrel 170 104 0
 enemy barrel 140 84 0
 
 exit 1800 1120 64 maps/episode01/map02.txt Press_E_To_Exit
@@ -84,8 +84,6 @@ spawn 672 224 0
 
 skybox assets/skies/dusk/
 
-item colt 750 200 0
-item uparrow 750 200 0
+item colt 750 200 0 spin
 
-item ammo_colt 750 150 0
-item uparrow 750 150 0
+item ammo_colt 750 150 0 spin

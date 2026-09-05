@@ -20,6 +20,7 @@ enum RenderSprite<'a> {
         position: Vec2,
         sprite_id: &'a str,
         rotation: f32,
+        spin: bool,
     },
 
     Enemy {
@@ -37,6 +38,7 @@ pub fn render_sprites(
     map: &Map,
     registry: &SpriteRegistry,
     zbuffer: &[f32],
+    item_spin_angle: f32,
 ) {
     let mut sprites:
         Vec<(
@@ -73,6 +75,9 @@ pub fn render_sprites(
 
                     rotation:
                         item.rotation,
+
+                    spin:
+                        item.spin,
                 },
             )
         );
@@ -146,6 +151,7 @@ pub fn render_sprites(
                 position,
                 sprite_id,
                 rotation,
+                spin,
             } => {
 
                 let definition =
@@ -168,25 +174,24 @@ pub fn render_sprites(
                     player.position.y
                         - position.y;
 
-                //
-                // Direction from the item toward the player.
-                //
                 let angle_to_player =
                     dy.atan2(dx);
 
-                //
-                // Convert the world-relative viewing angle
-                // into the sprite's local orientation.
-                //
-                // This is the important part for rotating sprites.
-                //
+                let effective_rotation =
+                    if spin {
+
+                        rotation
+                            - item_spin_angle
+
+                    } else {
+
+                        rotation
+                    };
+
                 let mut relative_angle =
                     angle_to_player
-                        - rotation;
+                        - effective_rotation;
 
-                //
-                // Normalize to -PI ... +PI.
-                //
                 while relative_angle
                     > std::f32::consts::PI
                 {
