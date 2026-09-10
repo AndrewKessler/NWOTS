@@ -38,7 +38,7 @@ pub fn authenticate_game(
      */
 
     let manifest_root =
-        crypto_namespace::read_manifest_root(
+        crypto_namespace::verify_manifest(
             &auth.manifest
         )?;
 
