@@ -178,6 +178,9 @@ impl App {
                 "Failed to parse game.toml"
             );
 
+        crate::authentication::authenticate_game(&config)
+            .expect("NWOTs authentication failed");
+
         let font_bytes =
             fs::read(
                 &config.menu.font

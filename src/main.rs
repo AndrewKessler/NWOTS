@@ -14,6 +14,9 @@ mod weapons;
 mod gameplay;
 mod audio;
 mod enemies;
+mod authentication;
+mod crypto_namespace;
+mod chain_react;
 
 use engine::App;
 

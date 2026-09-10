@@ -1,5 +1,10 @@
 spin = 45
 
+[blockchain_auth]
+enabled = true
+transaction_id = "ge99c9b227012a8a343ac10b3d87549f"
+manifest = "manifest.txt"
+
 [cutscene]
 
 path = "assets/cutscenes/intro"
