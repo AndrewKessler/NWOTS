@@ -20,10 +20,10 @@ pub struct GameConfig {
 #[derive(Debug, Deserialize)]
 pub struct BlockchainAuthConfig {
     pub enabled: bool,
-
     pub transaction_id: String,
-
     pub manifest: String,
+    pub address_file: String,
+    pub address_index: usize,
 }
 
 #[derive(Debug, Deserialize)]

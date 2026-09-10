@@ -22,18 +22,30 @@ pub fn authenticate_game(
     println!(
         "Blockchain authentication enabled."
     );
+
     println!(
         "Transaction ID: {}",
         auth.transaction_id
     );
+
     println!(
         "Manifest: {}",
         auth.manifest
     );
 
+    println!(
+        "Address file: {}",
+        auth.address_file
+    );
+
+    println!(
+        "Address index: {}",
+        auth.address_index
+    );
+
     /*
      * -------------------------------------------------------------------------
-     * 1. Read the local manifest root.
+     * 1. Verify the local asset namespace.
      * -------------------------------------------------------------------------
      */
 
@@ -49,7 +61,7 @@ pub fn authenticate_game(
 
     /*
      * -------------------------------------------------------------------------
-     * 2. Query the blockchain using the configured TXID.
+     * 2. Query the Lineage genesis transaction.
      * -------------------------------------------------------------------------
      */
 
@@ -83,7 +95,7 @@ pub fn authenticate_game(
     );
 
     println!(
-        "Item owner: {}",
+        "Item creation address: {}",
         item.owner_address
     );
 
@@ -99,7 +111,7 @@ pub fn authenticate_game(
 
     /*
      * -------------------------------------------------------------------------
-     * 3. Compare blockchain metadata with local manifest root.
+     * 3. Verify blockchain metadata against the local manifest.
      * -------------------------------------------------------------------------
      */
 
@@ -122,18 +134,54 @@ pub fn authenticate_game(
 
     /*
      * -------------------------------------------------------------------------
-     * 4. Verify that the Item is still currently owned.
+     * 4. Resolve the expected current-owner address.
      * -------------------------------------------------------------------------
      */
 
-    runtime.block_on(
-        chain_react::verify_current_ownership(
-            &item
-        )
-    )?;
+    let expected_address =
+        chain_react::read_address(
+            &auth.address_file,
+            auth.address_index,
+        )?;
+
+    println!(
+        "Expected owner address: {}",
+        expected_address
+    );
+
+    /*
+     * -------------------------------------------------------------------------
+     * 5. Query CURRENT UTXO state.
+     * -------------------------------------------------------------------------
+     *
+     * This is the Phase 6 change.
+     *
+     * We no longer require the Item to remain at its creation
+     * address. We ask the current UTXO set whether the configured
+     * address currently possesses this Item.
+     */
+
+    let current_owner =
+        runtime.block_on(
+            chain_react::verify_current_ownership(
+                &item,
+                &expected_address,
+            )
+        )?;
 
     println!(
         "Blockchain ownership authenticated."
+    );
+
+    println!(
+        "Current Item owner: {}",
+        current_owner.address
+    );
+
+    println!(
+        "Current Item outpoint: {}:{}",
+        current_owner.outpoint_tx_hash,
+        current_owner.outpoint_index
     );
 
     println!(
