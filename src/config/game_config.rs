@@ -24,6 +24,7 @@ pub struct BlockchainAuthConfig {
     pub manifest: String,
     pub address_file: String,
     pub address_index: usize,
+    pub wallet: String,
 }
 
 #[derive(Debug, Deserialize)]

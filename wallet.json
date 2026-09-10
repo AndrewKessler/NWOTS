@@ -1,0 +1,22 @@
+{
+  "network": "lineage-testnet",
+  "seed_phrase": "cat talk reveal country hire beauty game language cluster case unusual donate",
+  "bip39_passphrase": "Testing",
+  "addresses": [
+    {
+      "index": 0,
+      "address": "bc18377aace9a2bdc6052ad7c5a8172f52a3eb30bdf1b1dd1d6d25dbacbc6803",
+      "public_key_hex": "8b1d609337e8e9e1c80ab9c9fb96fdc1f0b656a9d8dd63e624da8d4cae749b73"
+    },
+    {
+      "index": 1,
+      "address": "ebc760fd6c97edaa980098fe705f93b761a4cb230926bf3267b0fedf904277e9",
+      "public_key_hex": "4170eeaeca2c7e26f182826c6f7807084b79bf8b9a1bd83dee38bf13db386f7b"
+    },
+    {
+      "index": 2,
+      "address": "1d4373bfe2f6e087f21b128ad33f913a79701d0435a21cf242c7bac8f81e4d72",
+      "public_key_hex": "831af0304b485556ce2add2468195aea406334c60e8d999af1481c40a33caf9b"
+    }
+  ]
+}

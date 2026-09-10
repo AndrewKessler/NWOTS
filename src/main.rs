@@ -17,6 +17,7 @@ mod enemies;
 mod authentication;
 mod crypto_namespace;
 mod chain_react;
+mod wallet_auth;
 
 use engine::App;
 

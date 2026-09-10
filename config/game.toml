@@ -6,6 +6,7 @@ transaction_id = "ge99c9b227012a8a343ac10b3d87549f"
 manifest = "manifest.txt"
 address_file = "address.txt"
 address_index = 2
+wallet = "wallet.json"
 
 [cutscene]
 

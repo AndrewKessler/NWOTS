@@ -1,6 +1,7 @@
 use crate::chain_react;
 use crate::config::game_config::GameConfig;
 use crate::crypto_namespace;
+use crate::wallet_auth;
 
 pub fn authenticate_game(
     config: &GameConfig,
@@ -182,6 +183,41 @@ pub fn authenticate_game(
         "Current Item outpoint: {}:{}",
         current_owner.outpoint_tx_hash,
         current_owner.outpoint_index
+    );
+
+
+
+        println!(
+        "Current Item outpoint: {}:{}",
+        current_owner.outpoint_tx_hash,
+        current_owner.outpoint_index
+    );
+
+    /*
+     * -------------------------------------------------------------------------
+     * 6. Prove wallet control of the current Item owner address.
+     * -------------------------------------------------------------------------
+     */
+
+    println!(
+        "Wallet authentication enabled."
+    );
+
+    println!(
+        "Wallet file: {}",
+        auth.wallet
+    );
+
+    let wallet_result =
+        wallet_auth::authenticate_wallet(
+            &auth.wallet,
+            auth.address_index,
+            &current_owner.address,
+        )?;
+
+    println!(
+        "Wallet authenticated: {}",
+        wallet_result.address
     );
 
     println!(
